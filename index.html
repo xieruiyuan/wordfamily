@@ -14,14 +14,27 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; }
   
   /* 左侧边栏 */
-  .sidebar { width: 330px; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar { width: 340px; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; flex-shrink: 0; }
   .status-bar { padding: 10px 14px; background: #eff6ff; font-size: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: #1e40af; }
-  .fallback-btn { font-size: 11px; color: #2563eb; background: #fff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 7px; cursor: pointer; }
+  .fallback-btn { font-size: 11px; color: #2563eb; background: #fff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 7px; cursor: pointer; flex-shrink: 0; }
   .fallback-btn:hover { background: #dbeafe; }
 
-  .search-box { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  .search-box input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .search-box { padding: 10px 14px 8px 14px; }
+  .search-box input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 13.5px; outline: none; transition: border-color 0.2s; }
   .search-box input:focus { border-color: #3b82f6; }
+
+  /* 主词性筛选栏 */
+  .pos-filter-bar {
+    padding: 0 14px 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+  .pos-chip {
+    font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 12px;
+    border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .pos-chip:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .pos-chip.active { background: #2563eb; border-color: #2563eb; color: #ffffff; }
   
   .family-list { flex: 1; overflow-y: auto; }
   
@@ -51,8 +64,8 @@
   .freq-group.collapsed > .freq-group-header .arrow-icon,
   .sub-group.collapsed > .sub-group-header .arrow-icon { transform: rotate(-90deg); }
 
-  .group-count { font-size: 11px; font-weight: 600; color: #475569; background: #fff; padding: 1px 8px; border-radius: 10px; border: 1px solid #cbd5e1; }
-  .sub-count { font-size: 10px; font-weight: 500; color: #64748b; background: #fff; padding: 1px 6px; border-radius: 8px; border: 1px solid #e2e8f0; }
+  .group-count { font-size: 11px; font-weight: 700; color: #1e40af; background: #dbeafe; padding: 1px 8px; border-radius: 10px; border: 1px solid #bfdbfe; }
+  .sub-count { font-size: 10.5px; font-weight: 600; color: #475569; background: #fff; padding: 1px 6px; border-radius: 8px; border: 1px solid #cbd5e1; }
 
   /* 左侧词条 */
   .family-item {
@@ -61,6 +74,8 @@
   }
   .family-item:hover { background: #f1f5f9; }
   .family-item.active { background: #eff6ff; color: #1d4ed8; font-weight: 700; border-left: 3px solid #2563eb; padding-left: 35px; }
+  .family-meta { display: flex; align-items: center; gap: 6px; }
+  .mini-pos { font-size: 10px; color: #64748b; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
   .family-rank { font-size: 11px; color: #94a3b8; font-weight: 400; }
 
   /* 右侧主视图 */
@@ -68,7 +83,6 @@
   .toolbar { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .header-title { font-size: 30px; font-weight: 800; color: #0f172a; }
   
-  /* 音标与发音按钮样式 */
   .phonetic-tag {
     font-family: "Lucida Sans Unicode", "DejaVu Sans", -apple-system, sans-serif;
     font-size: 15px; color: #475569; background: #f1f5f9; padding: 3px 9px;
@@ -97,7 +111,6 @@
     padding: 3px 8px; border-radius: 5px;
   }
 
-  /* 词族构词导读横幅 */
   .guide-box {
     background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7;
     border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 13.5px; line-height: 1.65; color: #0f172a;
@@ -107,7 +120,6 @@
   .pos-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
   .pos-header { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   
-  /* 词性彩色徽章样式 */
   .pos-badge { padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
   .pos-n { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
   .pos-v { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
@@ -131,7 +143,6 @@
   .tag-common { background: var(--common-bg); color: var(--common-text); }
   .tag-rare { background: var(--rare-bg); color: var(--rare-text); }
   
-  /* 释义与例句样式 */
   .lemma-def { font-size: 13.5px; color: #334155; margin: 4px 0 8px 0; line-height: 1.5; }
   .def-zh { font-weight: 600; color: #0f172a; }
   .def-en { color: #64748b; margin-left: 8px; font-style: italic; }
@@ -162,13 +173,21 @@
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或屈折词形...">
   </div>
+  <div class="pos-filter-bar" id="posFilterBar">
+    <button class="pos-chip active" data-pos="ALL" onclick="setPosFilter('ALL')">全部</button>
+    <button class="pos-chip" data-pos="v." onclick="setPosFilter('v.')">动词 v.</button>
+    <button class="pos-chip" data-pos="n." onclick="setPosFilter('n.')">名词 n.</button>
+    <button class="pos-chip" data-pos="adj." onclick="setPosFilter('adj.')">形容词 adj.</button>
+    <button class="pos-chip" data-pos="adv." onclick="setPosFilter('adv.')">副词 adv.</button>
+    <button class="pos-chip" data-pos="OTHER" onclick="setPosFilter('OTHER')">虚词/其他</button>
+  </div>
   <div class="family-list" id="familyList"></div>
 </div>
 
 <div class="main" id="mainView">
   <div style="padding:40px; text-align:center; color:#64748b;">
-    <h3>正在加载全库 27,445 个英语词族...</h3>
-    <p style="font-size:13px;">首次打开需下载词典数据包（约 30MB），加载后浏览器会自动缓存。</p>
+    <h3>正在加载英语词族数据库...</h3>
+    <p style="font-size:13px;">首次打开需下载词典数据包，加载后浏览器会自动缓存。</p>
   </div>
 </div>
 
@@ -179,6 +198,8 @@ let allFamilies = [];
 let activeRank = null;
 let hideRare = false;
 let currentVoiceName = "默认系统语音";
+let selectedPos = "ALL";
+let baseStatusText = "";
 
 function pickBestVoice(lang) {
   const voices = window.speechSynthesis.getVoices();
@@ -291,14 +312,54 @@ const SLOT_NAMES = {
   pres_participle: '现在分词'
 };
 
-function initData(data, sourceLabel = '云端已就绪') {
+function initData(data, sourceLabel = '已自动加载') {
   allFamilies = data;
-  document.getElementById('loadStatus').textContent = `${sourceLabel} (${allFamilies.length.toLocaleString()} 词族)`;
-  renderGroupedSidebar(allFamilies, false);
+  baseStatusText = `${sourceLabel} (${allFamilies.length.toLocaleString()} 词族)`;
+  applyFilters();
   if (allFamilies.length > 0) selectFamily(allFamilies[0].rank);
 }
 
-// 页面加载后自动拉取同目录下的 word_families_final.json
+function setPosFilter(pos) {
+  selectedPos = pos;
+  document.querySelectorAll('.pos-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.pos === pos);
+  });
+  applyFilters();
+}
+
+function matchesPos(fam) {
+  if (selectedPos === 'ALL') return true;
+  const p = fam.primary_pos;
+  if (selectedPos === 'OTHER') {
+    return !['v.', 'n.', 'adj.', 'adv.'].includes(p);
+  }
+  return p === selectedPos;
+}
+
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const filtered = allFamilies.filter(f => {
+    if (!matchesPos(f)) return false;
+    if (!q) return true;
+    if (f.headword.toLowerCase().includes(q)) return true;
+    return f.pos_branches.some(b => b.lemmas.some(l =>
+      l.lemma.toLowerCase().includes(q) ||
+      (l.def_zh && l.def_zh.toLowerCase().includes(q)) ||
+      Object.values(l.inflections).flat().some(w => w.toLowerCase().includes(q))
+    ));
+  });
+
+  const statusEl = document.getElementById('loadStatus');
+  if (selectedPos === 'ALL' && !q) {
+    statusEl.textContent = baseStatusText;
+  } else {
+    const posLabel = selectedPos === 'ALL' ? '全部词性' : (selectedPos === 'OTHER' ? '虚词/其他' : selectedPos);
+    statusEl.textContent = `筛选 [${posLabel}]: ${filtered.length.toLocaleString()} 词族`;
+  }
+
+  renderGroupedSidebar(filtered, Boolean(q));
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   try {
     const resp = await fetch(DATA_URL);
@@ -310,14 +371,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('mainView').innerHTML = `
       <div style="padding:30px; color:#475569; line-height:1.7;">
         <h3>未检测到同源 HTTP 服务</h3>
-        <p>如果你是直接双击本地 HTML 文件打开（<code>file://</code> 协议），浏览器安全策略会拦截自动读取本地 JSON。<br>
-        请点击左上角的 <strong>「本地文件」</strong> 按钮手动选择 <code>word_families_final.json</code>，或部署到 GitHub Pages 后即可全自动秒开。</p>
+        <p>请点击左上角的 <strong>「本地文件」</strong> 按钮手动选择 <code>word_families_final.json</code>，或通过 GitHub Pages 访问。</p>
       </div>
     `;
   }
 });
 
-// 保留手动选择文件作为离线兜底
 document.getElementById('jsonFile').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -329,22 +388,7 @@ document.getElementById('jsonFile').addEventListener('change', function(e) {
   reader.readAsText(file);
 });
 
-document.getElementById('searchInput').addEventListener('input', function(e) {
-  const q = e.target.value.trim().toLowerCase();
-  if (!q) {
-    renderGroupedSidebar(allFamilies, false);
-    return;
-  }
-  const matched = allFamilies.filter(f => {
-    if (f.headword.toLowerCase().includes(q)) return true;
-    return f.pos_branches.some(b => b.lemmas.some(l =>
-      l.lemma.toLowerCase().includes(q) ||
-      (l.def_zh && l.def_zh.toLowerCase().includes(q)) ||
-      Object.values(l.inflections).flat().some(w => w.toLowerCase().includes(q))
-    ));
-  });
-  renderGroupedSidebar(matched, true);
-});
+document.getElementById('searchInput').addEventListener('input', applyFilters);
 
 function toggleGroup(groupId) {
   const el = document.getElementById(groupId);
@@ -357,7 +401,7 @@ function toggleGroup(groupId) {
 function renderGroupedSidebar(list, forceExpandAll = false) {
   const container = document.getElementById('familyList');
   if (!list.length) {
-    container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;text-align:center;">未找到匹配词族</div>';
+    container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;text-align:center;">当前筛选条件下无匹配词族</div>';
     return;
   }
 
@@ -382,7 +426,10 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
       const itemsHtml = subItems.map(f => `
         <div class="family-item ${f.rank === activeRank ? 'active' : ''}" data-rank="${f.rank}" onclick="selectFamily(${f.rank})">
           <span>${f.headword}</span>
-          <span class="family-rank">#${f.rank}</span>
+          <span class="family-meta">
+            ${selectedPos === 'ALL' ? `<span class="mini-pos">${f.primary_pos}</span>` : ''}
+            <span class="family-rank">#${f.rank}</span>
+          </span>
         </div>
       `).join('');
 
@@ -390,7 +437,7 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
         <div class="sub-group ${isSubOpen ? '' : 'collapsed'}" id="${subId}">
           <div class="sub-group-header" onclick="toggleGroup('${subId}')">
             <span><span class="arrow-icon">▼</span>${start.toLocaleString()} – ${end.toLocaleString()}</span>
-            <span class="sub-count">${subItems.length}</span>
+            <span class="sub-count">${subItems.length} 词</span>
           </div>
           <div class="sub-group-body">
             ${itemsHtml}
@@ -403,7 +450,7 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
       <div class="freq-group ${isBandOpen ? '' : 'collapsed'}" id="${band.id}">
         <div class="freq-group-header" onclick="toggleGroup('${band.id}')">
           <span><span class="arrow-icon">▼</span>${band.label}</span>
-          <span class="group-count">${bandItems.length}</span>
+          <span class="group-count">${bandItems.length.toLocaleString()} 词</span>
         </div>
         <div class="freq-group-body">
           ${subHtml}
