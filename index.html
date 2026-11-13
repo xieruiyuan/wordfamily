@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语词族与派生形态树词典</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b;
+    --core-bg: #dbeafe; --core-text: #1d4ed8;
+    --common-bg: #dcfce7; --common-text: #15803d;
+    --rare-bg: #f1f5f9; --rare-text: #64748b;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; }
+  
+  /* 左侧边栏 */
+  .sidebar { width: 330px; border-right: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; flex-shrink: 0; }
+  .status-bar { padding: 10px 14px; background: #eff6ff; font-size: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: #1e40af; }
+  .fallback-btn { font-size: 11px; color: #2563eb; background: #fff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 7px; cursor: pointer; }
+  .fallback-btn:hover { background: #dbeafe; }
+
+  .search-box { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .search-box input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .search-box input:focus { border-color: #3b82f6; }
+  
+  .family-list { flex: 1; overflow-y: auto; }
+  
+  /* 一级词频分段 */
+  .freq-group { border-bottom: 1px solid var(--border); }
+  .freq-group-header {
+    padding: 11px 14px; background: #eef2f6; font-size: 13px; font-weight: 700; color: #1e293b;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;
+    position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #cbd5e1;
+  }
+  .freq-group-header:hover { background: #e2e8f0; }
+  .freq-group-body { display: block; }
+  .freq-group.collapsed .freq-group-body { display: none; }
+
+  /* 二级 200词分段 */
+  .sub-group { border-bottom: 1px solid #f1f5f9; }
+  .sub-group-header {
+    padding: 8px 14px 8px 24px; background: #f8fafc; font-size: 12px; font-weight: 600; color: #475569;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;
+    position: sticky; top: 38px; z-index: 5; border-bottom: 1px solid #f1f5f9;
+  }
+  .sub-group-header:hover { background: #f1f5f9; color: #0f172a; }
+  .sub-group-body { display: block; }
+  .sub-group.collapsed .sub-group-body { display: none; }
+
+  .arrow-icon { font-size: 10px; color: #64748b; transition: transform 0.18s; display: inline-block; margin-right: 6px; width: 10px; }
+  .freq-group.collapsed > .freq-group-header .arrow-icon,
+  .sub-group.collapsed > .sub-group-header .arrow-icon { transform: rotate(-90deg); }
+
+  .group-count { font-size: 11px; font-weight: 600; color: #475569; background: #fff; padding: 1px 8px; border-radius: 10px; border: 1px solid #cbd5e1; }
+  .sub-count { font-size: 10px; font-weight: 500; color: #64748b; background: #fff; padding: 1px 6px; border-radius: 8px; border: 1px solid #e2e8f0; }
+
+  /* 左侧词条 */
+  .family-item {
+    padding: 8px 14px 8px 38px; border-bottom: 1px solid #f8fafc; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; font-size: 13.5px;
+  }
+  .family-item:hover { background: #f1f5f9; }
+  .family-item.active { background: #eff6ff; color: #1d4ed8; font-weight: 700; border-left: 3px solid #2563eb; padding-left: 35px; }
+  .family-rank { font-size: 11px; color: #94a3b8; font-weight: 400; }
+
+  /* 右侧主视图 */
+  .main { flex: 1; padding: 24px 36px; overflow-y: auto; }
+  .toolbar { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .header-title { font-size: 30px; font-weight: 800; color: #0f172a; }
+  
+  /* 音标与发音按钮样式 */
+  .phonetic-tag {
+    font-family: "Lucida Sans Unicode", "DejaVu Sans", -apple-system, sans-serif;
+    font-size: 15px; color: #475569; background: #f1f5f9; padding: 3px 9px;
+    border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.15s;
+  }
+  .phonetic-tag:hover { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+
+  .phonetic-sm {
+    font-family: "Lucida Sans Unicode", "DejaVu Sans", -apple-system, sans-serif;
+    font-size: 13.5px; color: #64748b; cursor: pointer; padding: 1px 5px; border-radius: 4px; transition: all 0.15s;
+  }
+  .phonetic-sm:hover { background: #eff6ff; color: #1d4ed8; }
+
+  .tts-btn {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 5px;
+    padding: 2px 7px; font-size: 11.5px; font-weight: 600; color: #334155;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .tts-btn:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
+  .tts-btn:active { transform: scale(0.96); }
+  .tts-btn.speaking { background: #dbeafe; border-color: #2563eb; color: #1d4ed8; }
+
+  .voice-status {
+    font-size: 11.5px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0;
+    padding: 3px 8px; border-radius: 5px;
+  }
+
+  /* 词族构词导读横幅 */
+  .guide-box {
+    background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 13.5px; line-height: 1.65; color: #0f172a;
+  }
+  .guide-distinction { margin-top: 4px; color: #0369a1; }
+
+  .pos-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .pos-header { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  
+  /* 词性彩色徽章样式 */
+  .pos-badge { padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+  .pos-n { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .pos-v { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .pos-adj { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+  .pos-adv { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+  .pos-prep { background: #ccfbf1; color: #115e59; border: 1px solid #99f6e4; }
+  .pos-conj { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
+  .pos-pron { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .pos-det { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+  .pos-other { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+
+  .lemma-card { border-left: 3px solid #cbd5e1; padding: 12px 16px; margin-bottom: 12px; background: #fafafa; border-radius: 0 8px 8px 0; }
+  .lemma-card.tier-core { border-left-color: #2563eb; background: #f8faff; }
+  .lemma-card.tier-rare { opacity: 0.78; }
+  .hide-rare .tier-rare { display: none; }
+  
+  .lemma-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .lemma-word { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .tag { font-size: 11px; padding: 2px 7px; border-radius: 12px; font-weight: 600; }
+  .tag-core { background: var(--core-bg); color: var(--core-text); }
+  .tag-common { background: var(--common-bg); color: var(--common-text); }
+  .tag-rare { background: var(--rare-bg); color: var(--rare-text); }
+  
+  /* 释义与例句样式 */
+  .lemma-def { font-size: 13.5px; color: #334155; margin: 4px 0 8px 0; line-height: 1.5; }
+  .def-zh { font-weight: 600; color: #0f172a; }
+  .def-en { color: #64748b; margin-left: 8px; font-style: italic; }
+  
+  .lemma-examples { background: #ffffff; border-left: 2px solid #94a3b8; padding: 6px 12px; margin: 6px 0 10px 0; font-size: 13px; border-radius: 0 6px 6px 0; }
+  .example-item { margin-bottom: 4px; line-height: 1.45; }
+  .example-item:last-child { margin-bottom: 0; }
+  .ex-en { color: #1e293b; }
+  .ex-zh { color: #64748b; font-size: 12px; padding-left: 11px; }
+
+  .inflection-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .slot-pill { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+  .slot-label { color: #64748b; font-size: 11px; }
+  .word-click { cursor: pointer; border-bottom: 1px dashed transparent; transition: all 0.15s; }
+  .word-click:hover { color: #2563eb; border-bottom-color: #2563eb; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="status-bar">
+    <span id="loadStatus">正在自动加载词库...</span>
+    <label class="fallback-btn" title="本地离线浏览时可手动选择 JSON">
+      本地文件
+      <input type="file" id="jsonFile" accept=".json" style="display:none;">
+    </label>
+  </div>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或屈折词形...">
+  </div>
+  <div class="family-list" id="familyList"></div>
+</div>
+
+<div class="main" id="mainView">
+  <div style="padding:40px; text-align:center; color:#64748b;">
+    <h3>正在加载全库 27,445 个英语词族...</h3>
+    <p style="font-size:13px;">首次打开需下载词典数据包（约 30MB），加载后浏览器会自动缓存。</p>
+  </div>
+</div>
+
+<script>
+const DATA_URL = './word_families_final.json';
+
+let allFamilies = [];
+let activeRank = null;
+let hideRare = false;
+let currentVoiceName = "默认系统语音";
+
+function pickBestVoice(lang) {
+  const voices = window.speechSynthesis.getVoices();
+  const langVoices = voices.filter(v => v.lang.replace('_', '-').toLowerCase() === lang.toLowerCase());
+  const pool = langVoices.length ? langVoices : voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+
+  const nonRobotic = pool.filter(v => !/Fred|Albert|Bad|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Good|Hysterical|Junior|Kathy|Organ|Princess|Ralph|Trinoids|Whisper|Zarvox/i.test(v.name));
+  const candidates = nonRobotic.length ? nonRobotic : pool;
+
+  const scoreVoice = (v) => {
+    let s = 0;
+    if (/Premium|Enhanced|Natural|Neural|Siri/i.test(v.name)) s += 100;
+    if (/Google/i.test(v.name)) s += 60;
+    if (/Ava|Zoe|Evan|Tom|Allison|Susan|Serena|Daniel|Kate|Oliver|Samantha/i.test(v.name)) s += 30;
+    if (v.localService) s += 10;
+    return s;
+  };
+
+  candidates.sort((a, b) => scoreVoice(b) - scoreVoice(a));
+  return candidates[0] || null;
+}
+
+function speakText(text, lang = 'en-US', btnEl = null) {
+  if (!('speechSynthesis' in window)) {
+    alert('当前浏览器不支持语音合成朗读。');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  utter.rate = 1.0;
+
+  const bestVoice = pickBestVoice(lang);
+  if (bestVoice) {
+    utter.voice = bestVoice;
+    currentVoiceName = bestVoice.name;
+    const badge = document.getElementById('voiceStatusBadge');
+    if (badge) badge.textContent = `当前语音: ${bestVoice.name}`;
+  }
+
+  if (btnEl) {
+    btnEl.classList.add('speaking');
+    utter.onend = () => btnEl.classList.remove('speaking');
+    utter.onerror = () => btnEl.classList.remove('speaking');
+  }
+  window.speechSynthesis.speak(utter);
+}
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    const v = pickBestVoice('en-US');
+    if (v) {
+      currentVoiceName = v.name;
+      const badge = document.getElementById('voiceStatusBadge');
+      if (badge) badge.textContent = `当前语音: ${v.name}`;
+    }
+  };
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+const FREQ_BANDS = [
+  { id: 'band-1', label: '超高频核心 (Top 1 – 1,000)', min: 1, max: 1000, defaultOpen: true },
+  { id: 'band-2', label: '高频常用 (1,001 – 3,000)', min: 1001, max: 3000, defaultOpen: false },
+  { id: 'band-3', label: '中频进阶 (3,001 – 6,000)', min: 3001, max: 6000, defaultOpen: false },
+  { id: 'band-4', label: '中高阶词汇 (6,001 – 10,000)', min: 6001, max: 10000, defaultOpen: false },
+  { id: 'band-5', label: '母语深度扩展 (10,001 – 18,000)', min: 10001, max: 18000, defaultOpen: false },
+  { id: 'band-6', label: '低频与罕见词族 (18,001+)', min: 18001, max: 999999, defaultOpen: false }
+];
+
+const SUB_STEP = 200;
+const openState = new Map();
+openState.set('band-1', true);
+openState.set('sub-1-200', true);
+
+const POS_META = {
+  'n.': { cls: 'pos-n', name: '名词 Noun' },
+  'v.': { cls: 'pos-v', name: '动词 Verb' },
+  'adj.': { cls: 'pos-adj', name: '形容词 Adjective' },
+  'adv.': { cls: 'pos-adv', name: '副词 Adverb' },
+  'prep.': { cls: 'pos-prep', name: '介词 Preposition' },
+  'conj.': { cls: 'pos-conj', name: '连词 Conjunction' },
+  'pron.': { cls: 'pos-pron', name: '代词 Pronoun' },
+  'det.': { cls: 'pos-det', name: '限定词 Determiner' }
+};
+
+function getPosBadgeHtml(pos, showFullName = false) {
+  const meta = POS_META[pos] || { cls: 'pos-other', name: pos };
+  const text = showFullName ? `${pos} (${meta.name})` : pos;
+  return `<span class="pos-badge ${meta.cls}">${text}</span>`;
+}
+
+const SLOT_NAMES = {
+  base: '原形',
+  plural: '复数',
+  comparative: '比较级',
+  superlative: '最高级',
+  third_person_sg: '第三人称单数',
+  '3rd_person_sg': '第三人称单数',
+  '3rd_sg_pres': '第三人称单数',
+  '1st_sg_pres': '第一人称单数',
+  pres_pl: '现在时复数',
+  past_or_pp: '过去式 / 过去分词',
+  past_sg: '过去式单数',
+  past_pl: '过去式复数',
+  past_participle: '过去分词',
+  pres_participle: '现在分词'
+};
+
+function initData(data, sourceLabel = '云端已就绪') {
+  allFamilies = data;
+  document.getElementById('loadStatus').textContent = `${sourceLabel} (${allFamilies.length.toLocaleString()} 词族)`;
+  renderGroupedSidebar(allFamilies, false);
+  if (allFamilies.length > 0) selectFamily(allFamilies[0].rank);
+}
+
+// 页面加载后自动拉取同目录下的 word_families_final.json
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const resp = await fetch(DATA_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    initData(data, '已自动加载');
+  } catch (err) {
+    document.getElementById('loadStatus').textContent = '自动加载受限，请选本地文件';
+    document.getElementById('mainView').innerHTML = `
+      <div style="padding:30px; color:#475569; line-height:1.7;">
+        <h3>未检测到同源 HTTP 服务</h3>
+        <p>如果你是直接双击本地 HTML 文件打开（<code>file://</code> 协议），浏览器安全策略会拦截自动读取本地 JSON。<br>
+        请点击左上角的 <strong>「本地文件」</strong> 按钮手动选择 <code>word_families_final.json</code>，或部署到 GitHub Pages 后即可全自动秒开。</p>
+      </div>
+    `;
+  }
+});
+
+// 保留手动选择文件作为离线兜底
+document.getElementById('jsonFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('loadStatus').textContent = '正在解析本地文件...';
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    initData(JSON.parse(evt.target.result), '已加载本地文件');
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  const q = e.target.value.trim().toLowerCase();
+  if (!q) {
+    renderGroupedSidebar(allFamilies, false);
+    return;
+  }
+  const matched = allFamilies.filter(f => {
+    if (f.headword.toLowerCase().includes(q)) return true;
+    return f.pos_branches.some(b => b.lemmas.some(l =>
+      l.lemma.toLowerCase().includes(q) ||
+      (l.def_zh && l.def_zh.toLowerCase().includes(q)) ||
+      Object.values(l.inflections).flat().some(w => w.toLowerCase().includes(q))
+    ));
+  });
+  renderGroupedSidebar(matched, true);
+});
+
+function toggleGroup(groupId) {
+  const el = document.getElementById(groupId);
+  if (!el) return;
+  const willCollapse = !el.classList.contains('collapsed');
+  el.classList.toggle('collapsed', willCollapse);
+  openState.set(groupId, !willCollapse);
+}
+
+function renderGroupedSidebar(list, forceExpandAll = false) {
+  const container = document.getElementById('familyList');
+  if (!list.length) {
+    container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;text-align:center;">未找到匹配词族</div>';
+    return;
+  }
+
+  let html = '';
+
+  FREQ_BANDS.forEach(band => {
+    const bandItems = list.filter(f => f.rank >= band.min && f.rank <= band.max);
+    if (bandItems.length === 0) return;
+
+    const isBandOpen = forceExpandAll ? true : (openState.has(band.id) ? openState.get(band.id) : band.defaultOpen);
+    const maxRankInBand = Math.min(band.max, bandItems[bandItems.length - 1].rank);
+    let subHtml = '';
+
+    for (let start = band.min; start <= maxRankInBand; start += SUB_STEP) {
+      const end = Math.min(start + SUB_STEP - 1, band.max);
+      const subItems = bandItems.filter(f => f.rank >= start && f.rank <= end);
+      if (subItems.length === 0) continue;
+
+      const subId = `sub-${start}-${end}`;
+      const isSubOpen = forceExpandAll ? true : (openState.get(subId) || false);
+
+      const itemsHtml = subItems.map(f => `
+        <div class="family-item ${f.rank === activeRank ? 'active' : ''}" data-rank="${f.rank}" onclick="selectFamily(${f.rank})">
+          <span>${f.headword}</span>
+          <span class="family-rank">#${f.rank}</span>
+        </div>
+      `).join('');
+
+      subHtml += `
+        <div class="sub-group ${isSubOpen ? '' : 'collapsed'}" id="${subId}">
+          <div class="sub-group-header" onclick="toggleGroup('${subId}')">
+            <span><span class="arrow-icon">▼</span>${start.toLocaleString()} – ${end.toLocaleString()}</span>
+            <span class="sub-count">${subItems.length}</span>
+          </div>
+          <div class="sub-group-body">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="freq-group ${isBandOpen ? '' : 'collapsed'}" id="${band.id}">
+        <div class="freq-group-header" onclick="toggleGroup('${band.id}')">
+          <span><span class="arrow-icon">▼</span>${band.label}</span>
+          <span class="group-count">${bandItems.length}</span>
+        </div>
+        <div class="freq-group-body">
+          ${subHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function selectFamily(rank) {
+  activeRank = rank;
+  document.querySelectorAll('.family-item').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.rank) === rank);
+  });
+  const fam = allFamilies.find(f => f.rank === rank);
+  if (fam) renderFamilyDetail(fam);
+}
+
+function toggleRare(checked) {
+  hideRare = checked;
+  const main = document.getElementById('mainView');
+  main.classList.toggle('hide-rare', hideRare);
+}
+
+function getHeadwordPhonetic(fam) {
+  if (fam.phonetic) return fam.phonetic;
+  for (const b of fam.pos_branches) {
+    for (const l of b.lemmas) {
+      if (l.lemma.toLowerCase() === fam.headword.toLowerCase() && l.phonetic) {
+        return l.phonetic;
+      }
+    }
+  }
+  return '';
+}
+
+function formatIpaDisplay(rawIpa) {
+  if (!rawIpa) return '';
+  const cleaned = rawIpa.replace(/^美\s*/, '').replace(/^\/|\/$/g, '').trim();
+  return cleaned ? `美 /${cleaned}/` : '';
+}
+
+function renderFamilyDetail(fam) {
+  const main = document.getElementById('mainView');
+  main.classList.toggle('hide-rare', hideRare);
+  const hwSafe = escapeAttr(fam.headword);
+  const hwIpaText = formatIpaDisplay(getHeadwordPhonetic(fam));
+  const vInit = pickBestVoice('en-US');
+  if (vInit) currentVoiceName = vInit.name;
+
+  const guideHtml = (fam.family_guide && (fam.family_guide.root_logic || fam.family_guide.core_distinction)) ? `
+    <div class="guide-box">
+      ${fam.family_guide.root_logic ? `<div><strong>构词与词源逻辑：</strong>${fam.family_guide.root_logic}</div>` : ''}
+      ${fam.family_guide.core_distinction ? `<div class="guide-distinction"><strong>易混辨析：</strong>${fam.family_guide.core_distinction}</div>` : ''}
+    </div>
+  ` : '';
+
+  const branchesHtml = fam.pos_branches.map(b => {
+    const lemmasHtml = b.lemmas.map(l => {
+      const tierLabel = l.tier === 'core' ? 'CORE 核心' : (l.tier === 'common' ? 'COMMON 常见' : 'RARE 罕见');
+      const wSafe = escapeAttr(l.lemma);
+      const lIpaText = formatIpaDisplay(l.phonetic);
+      
+      const defHtml = (l.def_zh || l.def_en) ? `
+        <div class="lemma-def">
+          ${l.def_zh ? `<span class="def-zh">${l.def_zh}</span>` : ''}
+          ${l.def_en ? `<span class="def-en">${l.def_en}</span>` : ''}
+        </div>
+      ` : '';
+
+      const examplesHtml = (l.examples && l.examples.length) ? `
+        <div class="lemma-examples">
+          ${l.examples.map(ex => `
+            <div class="example-item">
+              <div class="ex-en">• ${ex.en}</div>
+              ${ex.zh ? `<div class="ex-zh">${ex.zh}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const infHtml = Object.entries(l.inflections).map(([slot, words]) => {
+        const clickableWords = words.map(w =>
+          `<strong class="word-click" title="点击发音: ${w}" onclick="speakText('${escapeAttr(w)}', 'en-US')">${w}</strong>`
+        ).join(', ');
+        return `
+          <div class="slot-pill">
+            <span class="slot-label">${SLOT_NAMES[slot] || slot}:</span>
+            ${clickableWords}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="lemma-card tier-${l.tier}">
+          <div class="lemma-top">
+            <span class="lemma-word">${l.lemma}</span>
+            ${lIpaText ? `<span class="phonetic-sm" title="点击朗读美音" onclick="speakText('${wSafe}', 'en-US')">${lIpaText}</span>` : ''}
+            <button class="tts-btn" title="美式发音" onclick="speakText('${wSafe}', 'en-US', this)">🔊 美</button>
+            <button class="tts-btn" title="英式发音" onclick="speakText('${wSafe}', 'en-GB', this)">🔊 英</button>
+            <span class="tag tag-${l.tier}">${tierLabel}</span>
+            <span style="font-size:12px;color:#94a3b8;">Zipf: ${l.zipf}</span>
+          </div>
+          ${defHtml}
+          ${examplesHtml}
+          <div class="inflection-grid">${infHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="pos-section">
+        <div class="pos-header">${getPosBadgeHtml(b.pos, true)} 词性分支</div>
+        ${lemmasHtml}
+      </div>
+    `;
+  }).join('');
+
+  main.innerHTML = `
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+        <span class="header-title">${fam.headword}</span>
+        ${hwIpaText ? `<span class="phonetic-tag" title="点击朗读美音" onclick="speakText('${hwSafe}', 'en-US')">${hwIpaText}</span>` : ''}
+        <button class="tts-btn" title="美式发音" onclick="speakText('${hwSafe}', 'en-US', this)">🔊 美音</button>
+        <button class="tts-btn" title="英式发音" onclick="speakText('${hwSafe}', 'en-GB', this)">🔊 英音</button>
+        <span style="color:#64748b;font-size:14px;">Rank #${fam.rank} · 主词性</span>
+        ${getPosBadgeHtml(fam.primary_pos, false)}
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+        <span class="voice-status" id="voiceStatusBadge">当前语音: ${currentVoiceName}</span>
+        <label style="font-size:14px; cursor:pointer; user-select:none;">
+          <input type="checkbox" ${hideRare ? 'checked' : ''} onchange="toggleRare(this.checked)"> 隐藏罕见词 (Rare)
+        </label>
+      </div>
+    </div>
+    ${guideHtml}
+    ${branchesHtml}
+  `;
+}
+</script>
+</body>
+</html>
