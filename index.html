@@ -284,6 +284,13 @@
   </div>
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或词形...">
+      <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#475569;user-select:none;">
+          <input type="checkbox" id="dragMergeToggle" onchange="toggleDragMerge(this.checked)">
+          <span>拖拽合并词族</span>
+        </label>
+        <button id="exportMergedBtn" onclick="exportMergedJson()" style="display:none;background:#0284c7;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;">💾 保存合并(<span id="mergeCount">0</span>)</button>
+      </div>
   </div>
   <div class="pos-filter-bar" id="posFilterBar">
     <button class="pos-chip active" data-pos="ALL" onclick="setPosFilter('ALL')">全部</button>
@@ -518,6 +525,7 @@ const SLOT_NAMES = {
 
 function initData(data, sourceLabel = '已自动加载') {
   allFamilies = data;
+        applySavedMerges();
   baseStatusText = `${sourceLabel} (${allFamilies.length.toLocaleString()} 词族)`;
   applyFilters();
   if (allFamilies.length > 0) selectFamily(allFamilies[0].rank, false);
@@ -843,5 +851,130 @@ function renderFamilyDetail(fam) {
   loadVisibleVisuals();
 }
 </script>
+
+<script>
+let dragMergeEnabled = false;
+const MERGE_STORAGE_KEY = 'wf_manual_merges_v1';
+
+function getSavedMerges() {
+  try { return JSON.parse(localStorage.getItem(MERGE_STORAGE_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function applySavedMerges() {
+  if (typeof allFamilies === 'undefined' || !Array.isArray(allFamilies)) return;
+  const merges = getSavedMerges();
+  const btn = document.getElementById('exportMergedBtn');
+  const cnt = document.getElementById('mergeCount');
+  if (btn && cnt) {
+    cnt.textContent = merges.length;
+    btn.style.display = merges.length > 0 ? 'inline-block' : 'none';
+  }
+  if (!merges.length) return;
+
+  const rankMap = new Map(allFamilies.map(f => [f.rank, f]));
+  const removedRanks = new Set();
+
+  for (const { sourceRank, targetRank } of merges) {
+    const src = rankMap.get(sourceRank);
+    const tgt = rankMap.get(targetRank);
+    if (!src || !tgt || src.rank === tgt.rank || removedRanks.has(src.rank)) continue;
+
+    for (const sBranch of (src.pos_branches || [])) {
+      let tBranch = (tgt.pos_branches || []).find(b => b.pos === sBranch.pos);
+      if (!tBranch) {
+        tgt.pos_branches.push(JSON.parse(JSON.stringify(sBranch)));
+      } else {
+        const existingLemmas = new Set(tBranch.lemmas.map(l => l.lemma.toLowerCase()));
+        for (const lem of (sBranch.lemmas || [])) {
+          if (!existingLemmas.has(lem.lemma.toLowerCase())) {
+            tBranch.lemmas.push(JSON.parse(JSON.stringify(lem)));
+          }
+        }
+      }
+    }
+    removedRanks.add(src.rank);
+  }
+
+  if (removedRanks.size > 0) {
+    allFamilies = allFamilies.filter(f => !removedRanks.has(f.rank));
+  }
+}
+
+function toggleDragMerge(checked) {
+  dragMergeEnabled = checked;
+  bindSidebarDragEvents();
+}
+
+function bindSidebarDragEvents() {
+  const items = document.querySelectorAll('[onclick*="selectFamily("]');
+  items.forEach(el => {
+    const m = el.getAttribute('onclick').match(/selectFamily\((\d+)\)/);
+    if (!m) return;
+    const rank = parseInt(m[1], 10);
+    el.setAttribute('draggable', dragMergeEnabled ? 'true' : 'false');
+    el.style.cursor = dragMergeEnabled ? 'grab' : 'pointer';
+
+    el.ondragstart = (e) => {
+      if (!dragMergeEnabled) return;
+      e.dataTransfer.setData('text/plain', String(rank));
+      el.style.opacity = '0.5';
+    };
+    el.ondragend = () => {
+      el.style.opacity = '1';
+      el.style.outline = '';
+    };
+    el.ondragover = (e) => {
+      if (!dragMergeEnabled) return;
+      e.preventDefault();
+      el.style.outline = '2px dashed #0284c7';
+    };
+    el.ondragleave = () => {
+      el.style.outline = '';
+    };
+    el.ondrop = (e) => {
+      if (!dragMergeEnabled) return;
+      e.preventDefault();
+      el.style.outline = '';
+      const sourceRank = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      if (!sourceRank || sourceRank === rank) return;
+      const srcFam = allFamilies.find(f => f.rank === sourceRank);
+      const tgtFam = allFamilies.find(f => f.rank === rank);
+      if (!srcFam || !tgtFam) return;
+
+      if (confirm(`确定将「${srcFam.headword} (#${sourceRank})」合并到「${tgtFam.headword} (#${rank})」下面吗？`)) {
+        const merges = getSavedMerges();
+        merges.push({ sourceRank, targetRank: rank });
+        localStorage.setItem(MERGE_STORAGE_KEY, JSON.stringify(merges));
+        applySavedMerges();
+        if (typeof filterFamilies === 'function') filterFamilies();
+        selectFamily(rank);
+      }
+    };
+  });
+}
+
+function exportMergedJson() {
+  allFamilies.forEach((f, idx) => { f.rank = idx + 1; });
+  const blob = new Blob([JSON.stringify(allFamilies)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'word_families_final.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  localStorage.removeItem(MERGE_STORAGE_KEY);
+  alert('已导出合并后的 word_families_final.json！将其覆盖到 ~/wordfamily_deploy/ 并 git push 即可永久生效。');
+}
+
+// 监听侧边栏列表重绘，自动保持可拖拽状态
+const sidebarObserver = new MutationObserver(() => {
+  if (dragMergeEnabled) bindSidebarDragEvents();
+});
+window.addEventListener('DOMContentLoaded', () => {
+  sidebarObserver.observe(document.body, { childList: true, subtree: true });
+});
+</script>
+
 </body>
 </html>
