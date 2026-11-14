@@ -735,7 +735,8 @@ function renderFamilyDetail(fam) {
   const guideHtml = (fam.family_guide && (fam.family_guide.root_logic || fam.family_guide.core_distinction)) ? `
     <div class="guide-box">
       ${fam.family_guide.root_logic ? `<div><strong>构词与词源逻辑：</strong>${fam.family_guide.root_logic}</div>` : ''}
-      ${fam.family_guide.core_distinction ? `<div class="guide-distinction"><strong>易混辨析：</strong>${fam.family_guide.core_distinction}</div>` : ''}
+      ${fam.family_guide.core_distinction ? `<div class="guide-distinction"><strong>易混辨析：</strong>${fam.family_guide.core_distinction}${(fam.related_forms && fam.related_forms.length) ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #bae6fd;display:flex;flex-wrap:wrap;align-items:center;gap:8px;"><strong style="color:#0369a1;">🔗 关联词形：</strong>${fam.related_forms.map(rf => `<button onclick="selectFamily(${rf.rank})" style="background:#ffffff;border:1px solid #7dd3fc;color:#0369a1;padding:3px 10px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:500;">${rf.label}：<strong>${rf.word}</strong> <span style="opacity:0.75;">(#${rf.rank})</span> ↗</button>`).join("")}</div>` : ""}
+    </div>` : ''}
     </div>
   ` : '';
 
