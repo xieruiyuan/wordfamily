@@ -538,7 +538,7 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
     const maxRankInBand = Math.min(band.max, bandItems[bandItems.length - 1].rank);
     let subHtml = '';
 
-    const activeStep = (typeof activePosFilter !== "undefined" && activePosFilter !== "all") ? 1000 : ((typeof currentPosFilter !== "undefined" && currentPosFilter !== "all") ? 1000 : ((typeof selectedPos !== "undefined" && selectedPos !== "all") ? 1000 : SUB_STEP));
+    const activeStep = (selectedPos === 'ALL') ? SUB_STEP : 1000;
     for (let start = band.min; start <= maxRankInBand; start += activeStep) {
       const end = Math.min(start + activeStep - 1, band.max);
       const subItems = bandItems.filter(f => f.rank >= start && f.rank <= end);
