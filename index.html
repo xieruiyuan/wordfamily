@@ -315,7 +315,7 @@
 </div>
 
 <script>
-const DATA_URL = './word_families_final.json?v=20261113';
+const DATA_URL = `./word_families_final.json?v=${Date.now()}`;
 
 let allFamilies = [];
 let currentFilteredList = [];
@@ -777,8 +777,8 @@ function renderFamilyDetail(fam) {
         `;
       }).join('');
 
-      const visualHtml = (b.pos === "n." && l.visual)
-        ? `<div class="lemma-visual-wrap loading" data-visual-word="${wSafe}" title="点击查看高清原图"></div>`
+      const visualHtml = (b.pos === "n." && l.img)
+        ? `<div class="lemma-visual-wrap" onclick="window.open('./images/${l.img}', '_blank')" title="点击查看大图"><img src="./images/${l.img}" alt="${wSafe}" loading="lazy" onerror="this.parentElement.remove()"></div>`
         : "";
 
       return `
