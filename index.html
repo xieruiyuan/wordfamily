@@ -397,6 +397,7 @@ const SUB_STEP = 200;
 const openState = new Map();
 openState.set('band-1', true);
 openState.set('sub-1-200', true);
+openState.set('sub-1-1000', true);
 
 const POS_META = {
   'n.': { cls: 'pos-n', name: '名词 Noun' },
@@ -537,8 +538,9 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
     const maxRankInBand = Math.min(band.max, bandItems[bandItems.length - 1].rank);
     let subHtml = '';
 
-    for (let start = band.min; start <= maxRankInBand; start += SUB_STEP) {
-      const end = Math.min(start + SUB_STEP - 1, band.max);
+    const activeStep = (typeof activePosFilter !== "undefined" && activePosFilter !== "all") ? 1000 : ((typeof currentPosFilter !== "undefined" && currentPosFilter !== "all") ? 1000 : ((typeof selectedPos !== "undefined" && selectedPos !== "all") ? 1000 : SUB_STEP));
+    for (let start = band.min; start <= maxRankInBand; start += activeStep) {
+      const end = Math.min(start + activeStep - 1, band.max);
       const subItems = bandItems.filter(f => f.rank >= start && f.rank <= end);
       if (subItems.length === 0) continue;
 
