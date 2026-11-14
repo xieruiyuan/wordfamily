@@ -852,8 +852,11 @@ function renderFamilyDetail(fam) {
 }
 </script>
 
+
+
 <script>
 let dragMergeEnabled = false;
+let pendingSourceRank = null;
 const MERGE_STORAGE_KEY = 'wf_manual_merges_v1';
 
 function getSavedMerges() {
@@ -901,55 +904,83 @@ function applySavedMerges() {
   }
 }
 
+function executeMerge(sourceRank, targetRank) {
+  if (!sourceRank || !targetRank || sourceRank === targetRank) return;
+  const srcFam = allFamilies.find(f => f.rank === sourceRank);
+  const tgtFam = allFamilies.find(f => f.rank === targetRank);
+  if (!srcFam || !tgtFam) return;
+
+  if (confirm(`确定将「${srcFam.headword} (#${sourceRank})」合并到「${tgtFam.headword} (#${targetRank})」下面吗？`)) {
+    const merges = getSavedMerges();
+    merges.push({ sourceRank, targetRank });
+    localStorage.setItem(MERGE_STORAGE_KEY, JSON.stringify(merges));
+    pendingSourceRank = null;
+    applySavedMerges();
+    if (typeof renderSidebar === 'function') renderSidebar();
+    else if (typeof filterFamilies === 'function') filterFamilies();
+    if (typeof selectFamily === 'function') selectFamily(targetRank);
+  }
+}
+
 function toggleDragMerge(checked) {
   dragMergeEnabled = checked;
+  pendingSourceRank = null;
   bindSidebarDragEvents();
 }
 
 function bindSidebarDragEvents() {
-  const items = document.querySelectorAll('[onclick*="selectFamily("]');
-  items.forEach(el => {
-    const m = el.getAttribute('onclick').match(/selectFamily\((\d+)\)/);
+  // 精准查找侧边栏中所有含 "#数字" 的词族行元素（不依赖 onclick 属性）
+  const candidates = document.querySelectorAll('aside div, .sidebar div, #sidebar div, #familyList div, [class*="list"] div, [class*="item"]');
+  const seen = new Set();
+
+  candidates.forEach(el => {
+    if (seen.has(el) || el.children.length === 0 || el.children.length > 5) return;
+    const txt = (el.textContent || '').trim();
+    const m = txt.match(/#(\d+)\s*$/);
     if (!m) return;
+    // 确保是叶子行容器而非外层大组容器
+    if (el.querySelector('div div')) return;
+    seen.add(el);
+
     const rank = parseInt(m[1], 10);
     el.setAttribute('draggable', dragMergeEnabled ? 'true' : 'false');
-    el.style.cursor = dragMergeEnabled ? 'grab' : 'pointer';
+    el.style.cursor = dragMergeEnabled ? 'grab' : '';
+    el.style.userSelect = dragMergeEnabled ? 'none' : '';
+
+    if (!dragMergeEnabled) {
+      el.ondragstart = null;
+      el.ondragover = null;
+      el.ondragleave = null;
+      el.ondrop = null;
+      el.style.outline = '';
+      return;
+    }
 
     el.ondragstart = (e) => {
-      if (!dragMergeEnabled) return;
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', String(rank));
-      el.style.opacity = '0.5';
+      el.style.opacity = '0.45';
     };
     el.ondragend = () => {
       el.style.opacity = '1';
       el.style.outline = '';
     };
     el.ondragover = (e) => {
-      if (!dragMergeEnabled) return;
       e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
       el.style.outline = '2px dashed #0284c7';
+      el.style.outlineOffset = '-2px';
     };
     el.ondragleave = () => {
       el.style.outline = '';
     };
     el.ondrop = (e) => {
-      if (!dragMergeEnabled) return;
       e.preventDefault();
+      e.stopPropagation();
       el.style.outline = '';
       const sourceRank = parseInt(e.dataTransfer.getData('text/plain'), 10);
-      if (!sourceRank || sourceRank === rank) return;
-      const srcFam = allFamilies.find(f => f.rank === sourceRank);
-      const tgtFam = allFamilies.find(f => f.rank === rank);
-      if (!srcFam || !tgtFam) return;
-
-      if (confirm(`确定将「${srcFam.headword} (#${sourceRank})」合并到「${tgtFam.headword} (#${rank})」下面吗？`)) {
-        const merges = getSavedMerges();
-        merges.push({ sourceRank, targetRank: rank });
-        localStorage.setItem(MERGE_STORAGE_KEY, JSON.stringify(merges));
-        applySavedMerges();
-        if (typeof filterFamilies === 'function') filterFamilies();
-        selectFamily(rank);
-      }
+      executeMerge(sourceRank, rank);
     };
   });
 }
@@ -967,7 +998,6 @@ function exportMergedJson() {
   alert('已导出合并后的 word_families_final.json！将其覆盖到 ~/wordfamily_deploy/ 并 git push 即可永久生效。');
 }
 
-// 监听侧边栏列表重绘，自动保持可拖拽状态
 const sidebarObserver = new MutationObserver(() => {
   if (dragMergeEnabled) bindSidebarDragEvents();
 });
@@ -975,6 +1005,5 @@ window.addEventListener('DOMContentLoaded', () => {
   sidebarObserver.observe(document.body, { childList: true, subtree: true });
 });
 </script>
-
 </body>
 </html>
