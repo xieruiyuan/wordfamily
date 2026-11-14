@@ -198,6 +198,21 @@
   .lemma-card.tier-core { border-left-color: #2563eb; background: #f8faff; }
   .lemma-card.tier-rare { opacity: 0.8; }
   .hide-rare .tier-rare { display: none; }
+  .hide-images .lemma-visual-wrap { display: none !important; }
+  .lemma-body-flex { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+  .lemma-text-col { flex: 1; min-width: 0; }
+  .lemma-visual-wrap {
+    flex-shrink: 0; width: 112px; height: 112px; border-radius: 8px;
+    border: 1px solid #e2e8f0; background: #ffffff; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04); cursor: zoom-in;
+  }
+  .lemma-visual-wrap.loading { background: #f8fafc; }
+  .lemma-visual-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s; }
+  .lemma-visual-wrap:hover img { transform: scale(1.05); }
+  @media (max-width: 768px) {
+    .lemma-visual-wrap { width: 88px; height: 88px; }
+  }
   
   .lemma-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; flex-wrap: wrap; }
   .lemma-word { font-size: 18px; font-weight: 700; color: #0f172a; }
@@ -306,6 +321,53 @@ let allFamilies = [];
 let currentFilteredList = [];
 let activeRank = null;
 let hideRare = false;
+let showImages = localStorage.getItem("dict_show_images") !== "false";
+const wikiImageCache = new Map();
+
+function toggleImages(checked) {
+  showImages = checked;
+  localStorage.setItem("dict_show_images", checked ? "true" : "false");
+  const main = document.getElementById("mainView");
+  main.classList.toggle("hide-images", !showImages);
+  if (showImages) loadVisibleVisuals();
+}
+
+async function fetchWikiThumb(word) {
+  const key = word.toLowerCase();
+  if (wikiImageCache.has(key)) return wikiImageCache.get(key);
+  try {
+    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) { wikiImageCache.set(key, null); return null; }
+    const data = await resp.json();
+    // 排除消歧义页面（disambiguation）以免配错图
+    if (data.type === "disambiguation" || !data.thumbnail || !data.thumbnail.source) {
+      wikiImageCache.set(key, null);
+      return null;
+    }
+    const thumb = data.thumbnail.source;
+    wikiImageCache.set(key, thumb);
+    return thumb;
+  } catch (e) {
+    wikiImageCache.set(key, null);
+    return null;
+  }
+}
+
+function loadVisibleVisuals() {
+  if (!showImages) return;
+  document.querySelectorAll(".lemma-visual-wrap[data-visual-word]").forEach(async (box) => {
+    const word = box.dataset.visualWord;
+    const thumb = await fetchWikiThumb(word);
+    if (!thumb) {
+      box.remove();
+      return;
+    }
+    box.classList.remove("loading");
+    box.innerHTML = `<img src="${thumb}" alt="${word}" loading="lazy" onerror="this.parentElement.remove()">`;
+    box.onclick = () => window.open(thumb, "_blank");
+  });
+}
 let currentVoiceName = "默认系统语音";
 let selectedPos = "ALL";
 let baseStatusText = "";
@@ -627,6 +689,7 @@ function toggleRare(checked) {
   hideRare = checked;
   const main = document.getElementById('mainView');
   main.classList.toggle('hide-rare', hideRare);
+  main.classList.toggle('hide-images', !showImages);
 }
 
 function getHeadwordPhonetic(fam) {
@@ -650,6 +713,7 @@ function formatIpaDisplay(rawIpa) {
 function renderFamilyDetail(fam) {
   const main = document.getElementById('mainView');
   main.classList.toggle('hide-rare', hideRare);
+  main.classList.toggle('hide-images', !showImages);
   const hwSafe = escapeAttr(fam.headword);
   const hwIpaText = formatIpaDisplay(getHeadwordPhonetic(fam));
   const vInit = pickBestVoice('en-US');
@@ -700,20 +764,29 @@ function renderFamilyDetail(fam) {
         `;
       }).join('');
 
+      const visualHtml = (b.pos === "n." && l.visual)
+        ? `<div class="lemma-visual-wrap loading" data-visual-word="${wSafe}" title="点击查看高清原图"></div>`
+        : "";
+
       return `
         <div class="lemma-card tier-${l.tier}">
-          <div class="lemma-top">
-            <span class="lemma-word">${l.lemma}</span>
-            ${lIpaText ? `<span class="phonetic-sm" title="点击朗读美音" onclick="speakText('${wSafe}', 'en-US')">${lIpaText}</span>` : ''}
-            <button class="tts-btn" title="美式发音" onclick="speakText('${wSafe}', 'en-US', this)">🔊 美</button>
-            <button class="tts-btn" title="英式发音" onclick="speakText('${wSafe}', 'en-GB', this)">🔊 英</button>
-            <span class="tag tag-${l.tier}">${tierLabel}</span>
-            <span style="font-size:12px;color:#94a3b8;">Zipf: ${l.zipf}</span>
+          <div class="lemma-body-flex">
+            <div class="lemma-text-col">
+              <div class="lemma-top">
+                <span class="lemma-word">${l.lemma}</span>
+                ${lIpaText ? `<span class="phonetic-sm" title="点击朗读美音" onclick="speakText('${wSafe}', 'en-US')">${lIpaText}</span>` : ''}
+                <button class="tts-btn" title="美式发音" onclick="speakText('${wSafe}', 'en-US', this)">🔊 美</button>
+                <button class="tts-btn" title="英式发音" onclick="speakText('${wSafe}', 'en-GB', this)">🔊 英</button>
+                <span class="tag tag-${l.tier}">${tierLabel}</span>
+                <span style="font-size:12px;color:#94a3b8;">Zipf: ${l.zipf}</span>
+              </div>
+              ${defHtml}
+              ${usageHtml}
+              ${examplesHtml}
+              <div class="inflection-grid">${infHtml}</div>
+            </div>
+            ${visualHtml}
           </div>
-          ${defHtml}
-          ${usageHtml}
-          ${examplesHtml}
-          <div class="inflection-grid">${infHtml}</div>
         </div>
       `;
     }).join('');
@@ -743,6 +816,9 @@ function renderFamilyDetail(fam) {
         </div>
         <span class="voice-status" id="voiceStatusBadge">当前语音: ${currentVoiceName}</span>
         <label style="font-size:13.5px; cursor:pointer; user-select:none;">
+          <input type="checkbox" ${showImages ? 'checked' : ''} onchange="toggleImages(this.checked)"> 实物配图
+        </label>
+        <label style="font-size:13.5px; cursor:pointer; user-select:none;">
           <input type="checkbox" ${hideRare ? 'checked' : ''} onchange="toggleRare(this.checked)"> 隐藏罕见词 (Rare)
         </label>
       </div>
@@ -750,6 +826,7 @@ function renderFamilyDetail(fam) {
     ${guideHtml}
     ${branchesHtml}
   `;
+  loadVisibleVisuals();
 }
 </script>
 </body>
