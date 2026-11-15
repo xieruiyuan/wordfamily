@@ -380,14 +380,14 @@
 </div>
 
 <script>
-const APP_VERSION = "2026.11.15";
+const APP_VERSION = "2026.11.15.2";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
 let allFamilies = [];
 let familyByRank = new Map();
 let familyByWord = new Map();
-let searchIndexMap = new Map(); // rank -> 预构建纯文本搜索索引（排除 JSON 键名噪音）
+let searchIndexMap = new Map();
 let currentFilteredList = [];
 let activeRank = null;
 let verbPhrasesMap = {};
@@ -587,7 +587,7 @@ if ("speechSynthesis" in window) {
 }
 
 function escapeAttr(str) {
-  return String(str).replace(/&/g, "&amp;").replace(/'/g, "\'").replace(/"/g, "&quot;");
+  return String(str).replace(/&/g, "&amp;").replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
 
 const FREQ_BANDS = [
@@ -631,7 +631,6 @@ const SLOT_NAMES = {
   past_participle: "过去分词", pres_participle: "现在分词"
 };
 
-// 一次性预构建纯净倒排文本索引（剔除 JSON 字段名干扰，毫秒级检索）
 function buildSearchIndex() {
   searchIndexMap.clear();
   for (const fam of allFamilies) {
@@ -658,8 +657,7 @@ function buildSearchIndex() {
         }
       }
     }
-    searchIndexMap.set(fam.rank, parts.join("
-").toLowerCase());
+    searchIndexMap.set(fam.rank, parts.join("\n").toLowerCase());
   }
 }
 
