@@ -320,6 +320,14 @@ const DATA_URL = `./word_families_final.json?v=${Date.now()}`;
 let allFamilies = [];
 let currentFilteredList = [];
 let activeRank = null;
+let verbPhrasesMap = {};
+fetch(`./verb_phrases.json?v=${Date.now()}`)
+  .then(r => r.ok ? r.json() : {})
+  .then(data => {
+    verbPhrasesMap = data || {};
+    if (activeRank) selectFamily(activeRank, false);
+  })
+  .catch(() => {});
 let hideRare = false;
 let showImages = localStorage.getItem("dict_show_images") !== "false";
 const wikiImageCache = new Map();
@@ -546,6 +554,8 @@ function applyFilters() {
     if (!matchesPos(f)) return false;
     if (!q) return true;
     if (f.headword.toLowerCase().includes(q)) return true;
+    const vpEntry = verbPhrasesMap[f.headword.toLowerCase()];
+    if (vpEntry && JSON.stringify(vpEntry).toLowerCase().includes(q)) return true;
     return f.pos_branches.some(b => b.lemmas.some(l =>
       l.lemma.toLowerCase().includes(q) ||
       (l.def_zh && l.def_zh.toLowerCase().includes(q)) ||
@@ -723,6 +733,57 @@ function formatIpaDisplay(rawIpa) {
   return cleaned ? `美 /${cleaned}/` : '';
 }
 
+function renderVerbPhrasesSection(headword) {
+  const vp = verbPhrasesMap[(headword || '').toLowerCase()];
+  if (!vp) return '';
+  const groups = [
+    { key: 'phrasal_verbs', title: '动词短语 Phrasal Verbs', border: '#bfdbfe', tagBg: '#dbeafe', tagColor: '#1d4ed8' },
+    { key: 'idioms', title: '地道习语 Idioms', border: '#fef08a', tagBg: '#fef9c3', tagColor: '#a16207' },
+    { key: 'collocations', title: '常用搭配 Collocations', border: '#bbf7d0', tagBg: '#dcfce7', tagColor: '#15803d' }
+  ];
+  const hasAny = groups.some(g => Array.isArray(vp[g.key]) && vp[g.key].length > 0);
+  if (!hasAny) return '';
+
+  let sectionsHtml = '';
+  for (const g of groups) {
+    const items = vp[g.key] || [];
+    if (!items.length) continue;
+    const rows = items.map(item => {
+      const pSafe = escapeAttr(item.phrase);
+      const exSafe = escapeAttr(item.example_en || '');
+      return `
+        <div style="padding:10px 12px;background:#ffffff;border:1px solid ${g.border};border-radius:8px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+            <strong style="font-size:15px;color:#0f172a;">${item.phrase}</strong>
+            <button class="tts-btn" title="美式朗读短语" onclick="speakText('${pSafe}', 'en-US', this)">🔊 朗读</button>
+            <span style="color:#334155;font-size:14px;">${item.meaning}</span>
+          </div>
+          ${item.example_en ? `
+            <div style="font-size:13.5px;color:#475569;margin-top:4px;padding-left:8px;border-left:2px solid ${g.border};">
+              <div>• ${item.example_en} <button class="tts-btn" style="padding:1px 6px;font-size:11px;" title="朗读例句" onclick="speakText('${exSafe}', 'en-US', this)">🔊</button></div>
+              <div style="color:#64748b;font-size:13px;">${item.example_zh || ''}</div>
+            </div>
+          ` : ''}
+        </div>`;
+    }).join('');
+
+    sectionsHtml += `
+      <div style="margin-top:12px;">
+        <div style="font-size:13px;font-weight:700;color:${g.tagColor};margin-bottom:6px;">${g.title}（${items.length}）</div>
+        ${rows}
+      </div>`;
+  }
+
+  return `
+    <div class="pos-section" style="background:#f8fafc;">
+      <div class="pos-header" style="margin-bottom:4px;">
+        <span>🧩 高频短语、习语与固定搭配</span>
+        <span style="font-size:12px;font-weight:500;color:#64748b;">(Phrasal Verbs & Idioms)</span>
+      </div>
+      ${sectionsHtml}
+    </div>`;
+}
+
 function renderFamilyDetail(fam) {
   const main = document.getElementById('mainView');
   main.classList.toggle('hide-rare', hideRare);
@@ -735,8 +796,8 @@ function renderFamilyDetail(fam) {
   const guideHtml = (fam.family_guide && (fam.family_guide.root_logic || fam.family_guide.core_distinction)) ? `
     <div class="guide-box">
       ${fam.family_guide.root_logic ? `<div><strong>构词与词源逻辑：</strong>${fam.family_guide.root_logic}</div>` : ''}
-      ${fam.family_guide.core_distinction ? `<div class="guide-distinction"><strong>易混辨析：</strong>${fam.family_guide.core_distinction}${(fam.related_forms && fam.related_forms.length) ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #bae6fd;display:flex;flex-wrap:wrap;align-items:center;gap:8px;"><strong style="color:#0369a1;">🔗 关联词形：</strong>${fam.related_forms.map(rf => `<button onclick="selectFamily(${rf.rank})" style="background:#ffffff;border:1px solid #7dd3fc;color:#0369a1;padding:3px 10px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:500;">${rf.label}：<strong>${rf.word}</strong> <span style="opacity:0.75;">(#${rf.rank})</span> ↗</button>`).join("")}</div>` : ""}
-    </div>` : ''}
+      ${fam.family_guide.core_distinction ? `<div class="guide-distinction"><strong>易混辨析：</strong>${fam.family_guide.core_distinction}</div>` : ''}
+      ${(fam.related_forms && fam.related_forms.length) ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #bae6fd;display:flex;flex-wrap:wrap;align-items:center;gap:8px;"><strong style="color:#0369a1;">🔗 关联词形：</strong>${fam.related_forms.map(rf => `<button onclick="selectFamily(${rf.rank}, false)" style="background:#ffffff;border:1px solid #7dd3fc;color:#0369a1;padding:3px 10px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:500;">${rf.label}：<strong>${rf.word}</strong> <span style="opacity:0.75;">(#${rf.rank})</span> ↗</button>`).join("")}</div>` : ''}
     </div>
   ` : '';
 
@@ -839,6 +900,7 @@ function renderFamilyDetail(fam) {
     </div>
     ${guideHtml}
     ${branchesHtml}
+    ${renderVerbPhrasesSection(fam.headword)}
   `;
   loadVisibleVisuals();
 }
