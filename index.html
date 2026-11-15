@@ -380,7 +380,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2026.11.15.3";
+const APP_VERSION = "2026.11.15.5";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -587,7 +587,7 @@ if ("speechSynthesis" in window) {
 }
 
 function escapeAttr(str) {
-  return String(str).replace(/&/g, "&amp;").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+  return String(str).replace(/&/g, '&amp;').replace(/'/g, "\'").replace(/"/g, '&quot;');
 }
 
 const FREQ_BANDS = [
