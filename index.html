@@ -837,10 +837,10 @@ function renderVerbPhrasesSection(headword) {
 
     const rows = items.map((item, idx) => {
       const pSafe = escapeAttr(item.phrase);
-      // 兼容多义项 senses 数组与旧版单义项格式
-      const senses = Array.isArray(item.senses) && item.senses.length
-        ? item.senses
-        : [{ meaning: item.meaning || '', example_en: item.example_en || '', example_zh: item.example_zh || '' }];
+      const senses = item.senses || [];
+      const gBadge = item.grammar_type === 'phrasal-prepositional'
+        ? '<span style="font-size:10.5px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">三词短语</span>'
+        : '';
       const isMatch = Boolean(qNow) && (
         item.phrase.toLowerCase().includes(qNow) ||
         senses.some(s => (s.meaning || '').toLowerCase().includes(qNow) || (s.example_en || '').toLowerCase().includes(qNow) || (s.example_zh || '').toLowerCase().includes(qNow))
@@ -870,7 +870,7 @@ function renderVerbPhrasesSection(headword) {
         <div class="vp-item ${hiddenCls} ${openCls}">
           <div class="vp-summary" onclick="toggleVpItem(this)">
             <span class="vp-chevron">▶</span>
-            <span class="vp-phrase-title">${item.phrase}</span>
+            <span class="vp-phrase-title">${item.phrase}</span>${gBadge}
             <button class="tts-btn" style="padding:2px 7px;font-size:11.5px;flex-shrink:0;" title="朗读短语" onclick="event.stopPropagation();speakText('${pSafe}', 'en-US', this)">🔊</button>
             <span class="vp-meaning-preview" title="${escapeAttr(previewText)}">${previewText}</span>
           </div>
