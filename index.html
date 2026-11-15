@@ -907,7 +907,7 @@ function renderFamilyDetail(fam) {
         <div class="lemma-examples">
           ${l.examples.map(ex => `
             <div class="example-item">
-              <div class="ex-en">• ${ex.en}</div>
+              <div class="ex-en">• ${ex.en} <button class="tts-btn" style="padding:1px 6px;font-size:11px;margin-left:4px;" title="朗读例句" onclick="speakText('${escapeAttr(ex.en)}', 'en-US', this)">🔊</button></div>
               ${ex.zh ? `<div class="ex-zh">${ex.zh}</div>` : ''}
             </div>
           `).join('')}
