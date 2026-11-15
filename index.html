@@ -265,6 +265,48 @@
     .pos-section { padding: 12px; }
     .lemma-card { padding: 10px 12px; }
   }
+
+  /* 动词短语与习语手风琴紧凑样式 */
+  .vp-item {
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
+    margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s;
+  }
+  .vp-item:hover { border-color: #93c5fd; }
+  .vp-summary {
+    padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; user-select: none; line-height: 1.45;
+  }
+  .vp-summary:hover { background: #f8fafc; }
+  .vp-chevron {
+    font-size: 11px; color: #64748b; transition: transform 0.18s;
+    display: inline-block; width: 12px; flex-shrink: 0;
+  }
+  .vp-item.open .vp-chevron { transform: rotate(90deg); color: #2563eb; }
+  .vp-phrase-title { font-size: 14.5px; font-weight: 700; color: #0f172a; flex-shrink: 0; }
+  .vp-meaning-preview {
+    font-size: 13.5px; color: #475569; flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vp-item.open .vp-meaning-preview { white-space: normal; color: #334155; }
+  .vp-details {
+    display: none; padding: 8px 12px 10px 32px;
+    background: #f8fafc; border-top: 1px dashed #e2e8f0;
+  }
+  .vp-item.open .vp-details { display: block; }
+  .vp-sense-row { margin-bottom: 8px; padding-left: 8px; border-left: 2px solid #93c5fd; }
+  .vp-sense-row:last-child { margin-bottom: 0; }
+  .vp-sense-meaning { font-size: 13.5px; font-weight: 600; color: #1e293b; margin-bottom: 2px; }
+  .vp-sense-en { font-size: 13px; color: #334155; }
+  .vp-sense-zh { font-size: 12.5px; color: #64748b; }
+  .vp-hidden-item { display: none; }
+  .vp-group.show-all .vp-hidden-item { display: block; }
+  .vp-more-btn {
+    width: 100%; padding: 7px; margin-top: 4px; background: #ffffff;
+    border: 1px dashed #cbd5e1; border-radius: 7px; color: #2563eb;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .vp-more-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+
 </style>
 </head>
 <body>
@@ -733,13 +775,28 @@ function formatIpaDisplay(rawIpa) {
   return cleaned ? `美 /${cleaned}/` : '';
 }
 
+function toggleVpItem(el) {
+  el.closest('.vp-item').classList.toggle('open');
+}
+
+function toggleAllVpItems(btn) {
+  const container = btn.closest('.pos-section');
+  const items = container.querySelectorAll('.vp-item');
+  const expand = btn.dataset.expanded !== 'true';
+  items.forEach(it => it.classList.toggle('open', expand));
+  container.querySelectorAll('.vp-group').forEach(g => g.classList.toggle('show-all', expand));
+  container.querySelectorAll('.vp-more-btn').forEach(b => b.style.display = expand ? 'none' : 'block');
+  btn.dataset.expanded = expand ? 'true' : 'false';
+  btn.textContent = expand ? '收起全部例句 ▴' : '展开全部例句 ▾';
+}
+
 function renderVerbPhrasesSection(headword) {
   const vp = verbPhrasesMap[(headword || '').toLowerCase()];
   if (!vp) return '';
   const groups = [
-    { key: 'phrasal_verbs', title: '动词短语 Phrasal Verbs', border: '#bfdbfe', tagBg: '#dbeafe', tagColor: '#1d4ed8' },
-    { key: 'idioms', title: '地道习语 Idioms', border: '#fef08a', tagBg: '#fef9c3', tagColor: '#a16207' },
-    { key: 'collocations', title: '常用搭配 Collocations', border: '#bbf7d0', tagBg: '#dcfce7', tagColor: '#15803d' }
+    { key: 'phrasal_verbs', title: '动词短语 Phrasal Verbs', tagColor: '#1d4ed8', limit: 6 },
+    { key: 'idioms', title: '地道习语 Idioms', tagColor: '#a16207', limit: 4 },
+    { key: 'collocations', title: '常用搭配 Collocations', tagColor: '#15803d', limit: 4 }
   ];
   const hasAny = groups.some(g => Array.isArray(vp[g.key]) && vp[g.key].length > 0);
   if (!hasAny) return '';
@@ -748,37 +805,67 @@ function renderVerbPhrasesSection(headword) {
   for (const g of groups) {
     const items = vp[g.key] || [];
     if (!items.length) continue;
-    const rows = items.map(item => {
+
+    const rows = items.map((item, idx) => {
       const pSafe = escapeAttr(item.phrase);
-      const exSafe = escapeAttr(item.example_en || '');
+      // 兼容多义项 senses 数组与旧版单义项格式
+      const senses = Array.isArray(item.senses) && item.senses.length
+        ? item.senses
+        : [{ meaning: item.meaning || '', example_en: item.example_en || '', example_zh: item.example_zh || '' }];
+
+      const previewText = senses.length > 1
+        ? senses.map((s, i) => `${i + 1}. ${s.meaning}`).join('  ·  ')
+        : senses[0].meaning;
+
+      const sensesHtml = senses.map((s, i) => {
+        const exSafe = escapeAttr(s.example_en || '');
+        const numBadge = senses.length > 1 ? `<span style="color:#2563eb;font-weight:700;margin-right:4px;">${i + 1}.</span>` : '';
+        return `
+          <div class="vp-sense-row">
+            <div class="vp-sense-meaning">${numBadge}${s.meaning}</div>
+            ${s.example_en ? `
+              <div class="vp-sense-en">• ${s.example_en} <button class="tts-btn" style="padding:1px 6px;font-size:11px;" title="朗读例句" onclick="event.stopPropagation();speakText('${exSafe}', 'en-US', this)">🔊</button></div>
+              <div class="vp-sense-zh">${s.example_zh || ''}</div>
+            ` : ''}
+          </div>`;
+      }).join('');
+
+      const hiddenCls = idx >= g.limit ? 'vp-hidden-item' : '';
       return `
-        <div style="padding:10px 12px;background:#ffffff;border:1px solid ${g.border};border-radius:8px;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
-            <strong style="font-size:15px;color:#0f172a;">${item.phrase}</strong>
-            <button class="tts-btn" title="美式朗读短语" onclick="speakText('${pSafe}', 'en-US', this)">🔊 朗读</button>
-            <span style="color:#334155;font-size:14px;">${item.meaning}</span>
+        <div class="vp-item ${hiddenCls}">
+          <div class="vp-summary" onclick="toggleVpItem(this)">
+            <span class="vp-chevron">▶</span>
+            <span class="vp-phrase-title">${item.phrase}</span>
+            <button class="tts-btn" style="padding:2px 7px;font-size:11.5px;flex-shrink:0;" title="朗读短语" onclick="event.stopPropagation();speakText('${pSafe}', 'en-US', this)">🔊</button>
+            <span class="vp-meaning-preview" title="${escapeAttr(previewText)}">${previewText}</span>
           </div>
-          ${item.example_en ? `
-            <div style="font-size:13.5px;color:#475569;margin-top:4px;padding-left:8px;border-left:2px solid ${g.border};">
-              <div>• ${item.example_en} <button class="tts-btn" style="padding:1px 6px;font-size:11px;" title="朗读例句" onclick="speakText('${exSafe}', 'en-US', this)">🔊</button></div>
-              <div style="color:#64748b;font-size:13px;">${item.example_zh || ''}</div>
-            </div>
-          ` : ''}
+          <div class="vp-details">
+            ${sensesHtml}
+          </div>
         </div>`;
     }).join('');
 
+    const extraCount = items.length - g.limit;
+    const moreBtnHtml = extraCount > 0
+      ? `<button class="vp-more-btn" onclick="this.closest('.vp-group').classList.add('show-all');this.style.display='none';">展开其余 ${extraCount} 条${g.title.split(' ')[0]} ▾</button>`
+      : '';
+
     sectionsHtml += `
-      <div style="margin-top:12px;">
+      <div class="vp-group" style="margin-top:12px;">
         <div style="font-size:13px;font-weight:700;color:${g.tagColor};margin-bottom:6px;">${g.title}（${items.length}）</div>
         ${rows}
+        ${moreBtnHtml}
       </div>`;
   }
 
   return `
     <div class="pos-section" style="background:#f8fafc;">
-      <div class="pos-header" style="margin-bottom:4px;">
-        <span>🧩 高频短语、习语与固定搭配</span>
-        <span style="font-size:12px;font-weight:500;color:#64748b;">(Phrasal Verbs & Idioms)</span>
+      <div class="pos-header" style="margin-bottom:4px;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span>🧩 高频短语、习语与固定搭配</span>
+          <span style="font-size:12px;font-weight:500;color:#64748b;">(点击短语展开多义项例句)</span>
+        </div>
+        <button class="desktop-nav-btn" style="font-size:12px;padding:3px 9px;" data-expanded="false" onclick="toggleAllVpItems(this)">展开全部例句 ▾</button>
       </div>
       ${sectionsHtml}
     </div>`;
