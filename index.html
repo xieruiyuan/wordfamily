@@ -838,9 +838,21 @@ function renderVerbPhrasesSection(headword) {
     const rows = items.map((item, idx) => {
       const pSafe = escapeAttr(item.phrase);
       const senses = item.senses || [];
-      const gBadge = item.grammar_type === 'phrasal-prepositional'
-        ? '<span style="font-size:10.5px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">三词短语</span>'
-        : '';
+      let badges = [];
+      if (item.grammar_type === 'phrasal-prepositional') {
+        badges.push('<span style="font-size:10.5px;background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">三词短语</span>');
+      }
+      if (item.separable === 'separable') {
+        badges.push('<span title="及物可分短语：代词宾语须放中间（如 turn it off）" style="font-size:10.5px;background:#dcfce7;color:#166534;padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">可分</span>');
+      } else if (item.separable === 'inseparable') {
+        badges.push('<span title="不可分短语：宾语须跟在整体短语后（如 look after it）" style="font-size:10.5px;background:#f1f5f9;color:#475569;padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">不可分</span>');
+      }
+      if (Array.isArray(item.register)) {
+        item.register.forEach(r => {
+          badges.push(`<span style="font-size:10.5px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">${r}</span>`);
+        });
+      }
+      const gBadge = badges.join('');
       const isMatch = Boolean(qNow) && (
         item.phrase.toLowerCase().includes(qNow) ||
         senses.some(s => (s.meaning || '').toLowerCase().includes(qNow) || (s.example_en || '').toLowerCase().includes(qNow) || (s.example_zh || '').toLowerCase().includes(qNow))
