@@ -307,6 +307,18 @@
   }
   .vp-more-btn:hover { background: #eff6ff; border-color: #93c5fd; }
 
+
+  /* 搜索命中短语高亮 & 收藏按钮样式 */
+  .vp-item.vp-match { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+  .vp-item.vp-match > .vp-summary { background: #fffbeb; }
+  .fav-btn {
+    background: #ffffff; border: 1px solid #cbd5e1; color: #475569;
+    border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .fav-btn:hover { background: #fefce8; border-color: #facc15; color: #a16207; }
+  .fav-btn.active { background: #fef9c3; border-color: #eab308; color: #854d0e; }
+
 </style>
 </head>
 <body>
@@ -334,6 +346,7 @@
     <button class="pos-chip" data-pos="adj." onclick="setPosFilter('adj.')">形容词 adj.</button>
     <button class="pos-chip" data-pos="adv." onclick="setPosFilter('adv.')">副词 adv.</button>
     <button class="pos-chip" data-pos="OTHER" onclick="setPosFilter('OTHER')">虚词/其他</button>
+    <button class="pos-chip" data-pos="FAV" onclick="setPosFilter('FAV')">⭐ 已收藏</button>
   </div>
   <div class="family-list" id="familyList"></div>
 </div>
@@ -362,6 +375,18 @@ const DATA_URL = `./word_families_final.json?v=${Date.now()}`;
 let allFamilies = [];
 let currentFilteredList = [];
 let activeRank = null;
+let favoriteRanks = new Set(JSON.parse(localStorage.getItem("dict_fav_ranks") || "[]"));
+
+function toggleFavorite(rank) {
+  if (favoriteRanks.has(rank)) {
+    favoriteRanks.delete(rank);
+  } else {
+    favoriteRanks.add(rank);
+  }
+  localStorage.setItem("dict_fav_ranks", JSON.stringify([...favoriteRanks]));
+  if (selectedPos === "FAV") applyFilters();
+  selectFamily(rank, false);
+}
 let verbPhrasesMap = {};
 fetch(`./verb_phrases.json?v=${Date.now()}`)
   .then(r => r.ok ? r.json() : {})
@@ -583,6 +608,7 @@ function setPosFilter(pos) {
 
 function matchesPos(fam) {
   if (selectedPos === 'ALL') return true;
+  if (selectedPos === 'FAV') return favoriteRanks.has(fam.rank);
   const p = fam.primary_pos;
   if (selectedPos === 'OTHER') {
     return !['v.', 'n.', 'adj.', 'adv.'].includes(p);
@@ -806,12 +832,20 @@ function renderVerbPhrasesSection(headword) {
     const items = vp[g.key] || [];
     if (!items.length) continue;
 
+    const qNow = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+    let hasMatchedItem = false;
+
     const rows = items.map((item, idx) => {
       const pSafe = escapeAttr(item.phrase);
       // 兼容多义项 senses 数组与旧版单义项格式
       const senses = Array.isArray(item.senses) && item.senses.length
         ? item.senses
         : [{ meaning: item.meaning || '', example_en: item.example_en || '', example_zh: item.example_zh || '' }];
+      const isMatch = Boolean(qNow) && (
+        item.phrase.toLowerCase().includes(qNow) ||
+        senses.some(s => (s.meaning || '').toLowerCase().includes(qNow) || (s.example_en || '').toLowerCase().includes(qNow) || (s.example_zh || '').toLowerCase().includes(qNow))
+      );
+      if (isMatch) hasMatchedItem = true;
 
       const previewText = senses.length > 1
         ? senses.map((s, i) => `${i + 1}. ${s.meaning}`).join('  ·  ')
@@ -830,9 +864,10 @@ function renderVerbPhrasesSection(headword) {
           </div>`;
       }).join('');
 
-      const hiddenCls = idx >= g.limit ? 'vp-hidden-item' : '';
+      const hiddenCls = (idx >= g.limit && !hasMatchedItem) ? 'vp-hidden-item' : '';
+      const openCls = isMatch ? 'open vp-match' : '';
       return `
-        <div class="vp-item ${hiddenCls}">
+        <div class="vp-item ${hiddenCls} ${openCls}">
           <div class="vp-summary" onclick="toggleVpItem(this)">
             <span class="vp-chevron">▶</span>
             <span class="vp-phrase-title">${item.phrase}</span>
@@ -846,12 +881,12 @@ function renderVerbPhrasesSection(headword) {
     }).join('');
 
     const extraCount = items.length - g.limit;
-    const moreBtnHtml = extraCount > 0
+    const moreBtnHtml = (extraCount > 0 && !hasMatchedItem)
       ? `<button class="vp-more-btn" onclick="this.closest('.vp-group').classList.add('show-all');this.style.display='none';">展开其余 ${extraCount} 条${g.title.split(' ')[0]} ▾</button>`
       : '';
 
     sectionsHtml += `
-      <div class="vp-group" style="margin-top:12px;">
+      <div class="vp-group ${hasMatchedItem ? 'show-all' : ''}" style="margin-top:12px;">
         <div style="font-size:13px;font-weight:700;color:${g.tagColor};margin-bottom:6px;">${g.title}（${items.length}）</div>
         ${rows}
         ${moreBtnHtml}
@@ -972,6 +1007,7 @@ function renderFamilyDetail(fam) {
         ${getPosBadgeHtml(fam.primary_pos, false)}
       </div>
       <div class="toolbar-right" style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+        <button class="fav-btn ${favoriteRanks.has(fam.rank) ? 'active' : ''}" onclick="toggleFavorite(${fam.rank})">${favoriteRanks.has(fam.rank) ? '⭐ 已收藏' : '☆ 收藏'}</button>
         <div class="desktop-nav-group">
           <button class="desktop-nav-btn" title="上一个词族 (快捷键 ←)" onclick="stepFamily(-1)">‹ 上一词</button>
           <button class="desktop-nav-btn" title="下一个词族 (快捷键 →)" onclick="stepFamily(1)">下一词 ›</button>
