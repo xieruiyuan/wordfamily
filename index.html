@@ -380,7 +380,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2026.11.15.2";
+const APP_VERSION = "2026.11.15.3";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -639,8 +639,11 @@ function buildSearchIndex() {
       for (const l of b.lemmas) {
         parts.push(l.lemma);
         if (l.def_zh) parts.push(l.def_zh);
-        for (const arr of Object.values(l.inflections)) {
-          parts.push(...arr);
+        if (l.inflections && typeof l.inflections === "object") {
+          for (const val of Object.values(l.inflections)) {
+            if (Array.isArray(val)) parts.push(...val);
+            else if (typeof val === "string") parts.push(val);
+          }
         }
       }
     }
