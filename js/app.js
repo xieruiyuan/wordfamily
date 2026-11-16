@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.4";
+const APP_VERSION = "2026.11.16.5";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -22,11 +22,14 @@ const wikiImageCache = new Map();
 let currentVoiceName = "默认系统语音";
 let selectedPos = "ALL";
 let onlyFav = false;
+let includeSecondaryPos = localStorage.getItem("wf_include_secondary_pos") === "1";
 let baseStatusText = "";
 
 function refreshStateFromStore(newState) {
   studyState = newState || loadStudyState();
   favoriteRanks = new Set(studyState.favorites || []);
+  const secChk = document.getElementById("includeSecondaryPosCheck");
+  if (secChk) secChk.checked = includeSecondaryPos;
   updateFavBadge();
   if (allFamilies.length) {
     applyFilters();
@@ -425,14 +428,35 @@ function setPosFilter(pos) {
   applyFilters();
 }
 
+function toggleSecondaryPos(checked) {
+  includeSecondaryPos = Boolean(checked);
+  localStorage.setItem("wf_include_secondary_pos", includeSecondaryPos ? "1" : "0");
+  applyFilters();
+}
+
+function isPosMatch(pos, target) {
+  if (target === "OTHER") {
+    return !["v.", "n.", "adj.", "adv."].includes(pos);
+  }
+  return pos === target;
+}
+
 function matchesPos(fam) {
   if (onlyFav && !favoriteRanks.has(fam.rank)) return false;
   if (selectedPos === "ALL") return true;
-  const p = fam.primary_pos;
-  if (selectedPos === "OTHER") {
-    return !["v.", "n.", "adj.", "adv."].includes(p);
+
+  // 1. 主词性直接命中
+  if (isPosMatch(fam.primary_pos, selectedPos)) return true;
+
+  // 2. 若开启「包含兼类词性」，检查是否存在目标词性且包含非罕见（tier !== "rare"）的词条
+  if (includeSecondaryPos) {
+    return (fam.pos_branches || []).some(branch => {
+      if (!isPosMatch(branch.pos, selectedPos)) return false;
+      return (branch.lemmas || []).some(l => (l.tier || "").toLowerCase() !== "rare");
+    });
   }
-  return p === selectedPos;
+
+  return false;
 }
 
 function applyFilters() {
@@ -942,6 +966,7 @@ window.speakCurrentHeadword = speakCurrentHeadword;
 window.toggleCurrentFavorite = toggleCurrentFavorite;
 window.speakText = speakText;
 window.setPosFilter = setPosFilter;
+window.toggleSecondaryPos = toggleSecondaryPos;
 window.toggleGroup = toggleGroup;
 window.selectFamily = selectFamily;
 window.toggleRare = toggleRare;

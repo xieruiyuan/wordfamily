@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>英语词族与派生形态树词典</title>
-<link rel="stylesheet" href="./css/app.css?v=2026.11.16.4">
+<link rel="stylesheet" href="./css/app.css?v=2026.11.16.5">
 </head>
 <body>
 
@@ -34,6 +34,10 @@
     <button class="pos-chip" data-pos="OTHER" onclick="setPosFilter('OTHER')">虚词/其他</button>
     <button class="pos-chip" data-pos="FAV" onclick="setPosFilter('FAV')">⭐ 已收藏 <span id="favCountBadge" style="opacity:0.8;"></span></button>
   </div>
+    <label class="secondary-pos-toggle" title="开启后，只要词族包含所选词性的非罕见词条（如 wrench 的名词分支），即使主词性不符也会显示">
+      <input type="checkbox" id="includeSecondaryPosCheck" onchange="toggleSecondaryPos(this.checked)">
+      <span>包含兼类词性（非罕见分支也参与筛选）</span>
+    </label>
   <div id="favToolsBar" style="display:none;padding:6px 14px;background:#fefce8;border-bottom:1px solid #fde68a;font-size:12px;justify-content:space-between;align-items:center;color:#854d0e;">
     <span>生词本备份：</span>
     <div style="display:flex;gap:6px;">
@@ -75,6 +79,6 @@
   <div class="dict-modal" id="dictationModalContent"></div>
 </div>
 
-<script type="module" src="./js/app.js?v=2026.11.16.4"></script>
+<script type="module" src="./js/app.js?v=2026.11.16.5"></script>
 </body>
 </html>
