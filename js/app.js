@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.5";
+const APP_VERSION = "2026.11.16.6";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -441,6 +441,33 @@ function isPosMatch(pos, target) {
   return pos === target;
 }
 
+function matchesSearchQuery(fam, q) {
+  if (!q) return true;
+  if (!fam._wordIndex) {
+    const words = new Set([fam.headword.toLowerCase()]);
+    const zhs = [];
+    for (const b of (fam.pos_branches || [])) {
+      for (const l of (b.lemmas || [])) {
+        if (l.lemma) words.add(l.lemma.toLowerCase());
+        if (l.def_zh) zhs.push(l.def_zh.toLowerCase());
+        if (l.inflections) {
+          for (const forms of Object.values(l.inflections)) {
+            if (Array.isArray(forms)) {
+              for (const form of forms) {
+                if (form) words.add(form.toLowerCase());
+              }
+            }
+          }
+        }
+      }
+    }
+    fam._wordIndex = Array.from(words).join(" ");
+    fam._zhIndex = zhs.join(" ");
+  }
+  const hasChinese = /[\u4e00-\u9fa5]/.test(q);
+  return hasChinese ? fam._zhIndex.includes(q) : fam._wordIndex.includes(q);
+}
+
 function matchesPos(fam) {
   if (onlyFav && !favoriteRanks.has(fam.rank)) return false;
   if (selectedPos === "ALL") return true;
@@ -464,8 +491,7 @@ function applyFilters() {
   const filtered = allFamilies.filter(f => {
     if (!matchesPos(f)) return false;
     if (!q) return true;
-    const blob = searchIndexMap.get(f.rank) || "";
-    return blob.includes(q);
+    return matchesSearchQuery(f, q);
   });
 
   currentFilteredList = filtered;
