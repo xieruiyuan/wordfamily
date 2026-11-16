@@ -407,3 +407,23 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   .wrong-card-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+
+  /* 规整双层工具栏（左对齐标题，右对齐操作按钮，杜绝折行错位） */
+  .toolbar-wrap {
+    margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .toolbar-main-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .toolbar-title-group {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .toolbar-action-group {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .toolbar-sub-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px;
+  }

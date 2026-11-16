@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.1";
+const APP_VERSION = "2026.11.16.2";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -857,29 +857,39 @@ function renderFamilyDetail(fam) {
   }).join("");
 
   main.innerHTML = `
-    <div class="toolbar">
-      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span class="header-title">${fam.headword}</span>
-        ${hwIpaText ? `<span class="phonetic-tag" title="点击朗读美音" onclick="speakText('${hwSafe}', 'en-US')">${hwIpaText}</span>` : ""}
-        <button class="tts-btn" title="美式发音" onclick="speakText('${hwSafe}', 'en-US', this)">🔊 美音</button>
-        <button class="tts-btn" title="英式发音" onclick="speakText('${hwSafe}', 'en-GB', this)">🔊 英音</button>
-        <span style="color:#64748b;font-size:13.5px;">Rank #${fam.rank} · 主词性</span>
-        ${getPosBadgeHtml(fam.primary_pos, false)}
-      </div>
-      <div class="toolbar-right" style="margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button class="dict-trigger-btn" onclick="window.__dictCtrl.open('setup')">✍️ 默写 / 错题本</button>
-        <button class="fav-btn ${favoriteRanks.has(fam.rank) ? "active" : ""}" onclick="toggleFavorite(${fam.rank})">${favoriteRanks.has(fam.rank) ? "⭐ 已收藏" : "☆ 收藏"}</button>
-        <div class="desktop-nav-group">
-          <button class="desktop-nav-btn" title="上一个词族 (快捷键 ←)" onclick="stepFamily(-1)">‹ 上一词</button>
-          <button class="desktop-nav-btn" title="下一个词族 (快捷键 →)" onclick="stepFamily(1)">下一词 ›</button>
+    <div class="toolbar-wrap">
+      <div class="toolbar-main-row">
+        <div class="toolbar-title-group">
+          <span class="header-title">${fam.headword}</span>
+          ${hwIpaText ? `<span class="phonetic-tag" title="点击朗读美音" onclick="speakText('${hwSafe}', 'en-US')">${hwIpaText}</span>` : ""}
+          <button class="tts-btn" title="美式发音" onclick="speakText('${hwSafe}', 'en-US', this)">🔊 美音</button>
+          <button class="tts-btn" title="英式发音" onclick="speakText('${hwSafe}', 'en-GB', this)">🔊 英音</button>
         </div>
-        <span class="voice-status" id="voiceStatusBadge">当前语音: ${currentVoiceName}</span>
-        <label style="font-size:13.5px; cursor:pointer; user-select:none;">
-          <input type="checkbox" ${showImages ? "checked" : ""} onchange="toggleImages(this.checked)"> 实物配图
-        </label>
-        <label style="font-size:13.5px; cursor:pointer; user-select:none;">
-          <input type="checkbox" ${hideRare ? "checked" : ""} onchange="toggleRare(this.checked)"> 隐藏罕见词 (Rare)
-        </label>
+        <div class="toolbar-action-group">
+          <button class="dict-trigger-btn" onclick="window.__dictCtrl.open('setup')">✍️ 默写 / 错题本</button>
+          <button class="fav-btn ${favoriteRanks.has(fam.rank) ? "active" : ""}" onclick="toggleFavorite(${fam.rank})">${favoriteRanks.has(fam.rank) ? "⭐ 已收藏" : "☆ 收藏"}</button>
+          <div class="desktop-nav-group">
+            <button class="desktop-nav-btn" title="上一个词族 (快捷键 ←)" onclick="stepFamily(-1)">‹ 上一词</button>
+            <button class="desktop-nav-btn" title="下一个词族 (快捷键 →)" onclick="stepFamily(1)">下一词 ›</button>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar-sub-row">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="color:#64748b;font-size:13px;font-weight:600;">Rank #${fam.rank}</span>
+          <span style="color:#cbd5e1;">|</span>
+          <span style="color:#64748b;font-size:13px;">主词性</span>
+          ${getPosBadgeHtml(fam.primary_pos, false)}
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <span class="voice-status" id="voiceStatusBadge">当前语音: ${currentVoiceName}</span>
+          <label style="font-size:13px; color:#475569; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;">
+            <input type="checkbox" ${showImages ? "checked" : ""} onchange="toggleImages(this.checked)"> 实物配图
+          </label>
+          <label style="font-size:13px; color:#475569; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;">
+            <input type="checkbox" ${hideRare ? "checked" : ""} onchange="toggleRare(this.checked)"> 隐藏罕见词 (Rare)
+          </label>
+        </div>
       </div>
     </div>
     ${guideHtml}
