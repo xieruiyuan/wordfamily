@@ -488,3 +488,9 @@
     .dock-speak-btn.speaking { background: #16a34a; }
     #mobileDockFavBtn.active { background: #fef9c3; color: #a16207; }
   }
+
+  .pos-chip[data-pos="FAV"].active {
+    background: #d97706;
+    border-color: #d97706;
+    color: #ffffff;
+  }

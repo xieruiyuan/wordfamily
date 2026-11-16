@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.3";
+const APP_VERSION = "2026.11.16.4";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -21,6 +21,7 @@ const wikiImageCache = new Map();
 
 let currentVoiceName = "默认系统语音";
 let selectedPos = "ALL";
+let onlyFav = false;
 let baseStatusText = "";
 
 function refreshStateFromStore(newState) {
@@ -37,7 +38,7 @@ function updateFavBadge() {
   const badge = document.getElementById("favCountBadge");
   if (badge) badge.textContent = favoriteRanks.size ? `(${favoriteRanks.size})` : "";
   const bar = document.getElementById("favToolsBar");
-  if (bar) bar.style.display = selectedPos === "FAV" ? "flex" : "none";
+  if (bar) bar.style.display = onlyFav ? "flex" : "none";
 }
 
 function toggleFavorite(rank) {
@@ -49,7 +50,7 @@ function toggleFavorite(rank) {
   studyState.favorites = [...favoriteRanks];
   saveStudyState(studyState);
   updateFavBadge();
-  if (selectedPos === "FAV") applyFilters();
+  if (onlyFav) applyFilters();
   selectFamily(rank, false, false);
 }
 
@@ -408,17 +409,25 @@ function initData(data, sourceLabel = "已自动加载") {
 }
 
 function setPosFilter(pos) {
-  selectedPos = pos;
+  if (pos === "FAV") {
+    onlyFav = !onlyFav;
+  } else {
+    selectedPos = pos;
+  }
   document.querySelectorAll(".pos-chip").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.pos === pos);
+    if (btn.dataset.pos === "FAV") {
+      btn.classList.toggle("active", onlyFav);
+    } else {
+      btn.classList.toggle("active", btn.dataset.pos === selectedPos);
+    }
   });
   updateFavBadge();
   applyFilters();
 }
 
 function matchesPos(fam) {
+  if (onlyFav && !favoriteRanks.has(fam.rank)) return false;
   if (selectedPos === "ALL") return true;
-  if (selectedPos === "FAV") return favoriteRanks.has(fam.rank);
   const p = fam.primary_pos;
   if (selectedPos === "OTHER") {
     return !["v.", "n.", "adj.", "adv."].includes(p);
@@ -438,11 +447,17 @@ function applyFilters() {
   currentFilteredList = filtered;
 
   const statusEl = document.getElementById("loadStatus");
-  if (selectedPos === "ALL" && !q) {
+  if (selectedPos === "ALL" && !onlyFav && !q) {
     statusEl.textContent = baseStatusText;
   } else {
-    const posLabel = selectedPos === "ALL" ? "全部词性" : (selectedPos === "FAV" ? "已收藏" : (selectedPos === "OTHER" ? "虚词/其他" : selectedPos));
-    statusEl.textContent = `筛选 [${posLabel}]: ${filtered.length.toLocaleString()} 词族`;
+    const parts = [];
+    if (onlyFav) parts.push("已收藏");
+    if (selectedPos !== "ALL") {
+      parts.push(selectedPos === "OTHER" ? "虚词/其他" : selectedPos);
+    } else if (!onlyFav) {
+      parts.push("全部词性");
+    }
+    statusEl.textContent = `筛选 [${parts.join(" · ")}]: ${filtered.length.toLocaleString()} 词族`;
   }
 
   renderGroupedSidebar(filtered, Boolean(q));
