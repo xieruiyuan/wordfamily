@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.2";
+const APP_VERSION = "2026.11.16.3";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -153,6 +153,25 @@ function openMobileDrawer() {
 function closeMobileDrawer() {
   document.getElementById("sidebar").classList.remove("open");
   document.getElementById("drawerBackdrop").classList.remove("open");
+}
+
+function speakCurrentHeadword(lang = "en-US") {
+  const fam = familyByRank.get(activeRank);
+  const btn = document.getElementById("mobileDockSpeakBtn");
+  if (fam) speakText(fam.headword, lang, btn);
+}
+
+function toggleCurrentFavorite() {
+  if (activeRank) toggleFavorite(activeRank);
+}
+
+function syncMobileDockState() {
+  const favBtn = document.getElementById("mobileDockFavBtn");
+  if (favBtn && activeRank) {
+    const isFav = favoriteRanks.has(activeRank);
+    favBtn.textContent = isFav ? "⭐" : "☆";
+    favBtn.classList.toggle("active", isFav);
+  }
 }
 
 function stepFamily(delta) {
@@ -612,6 +631,7 @@ function selectFamily(rank, autoCloseMobile = true, syncHash = true) {
   revealAndHighlightInSidebar(rank);
   renderFamilyDetail(fam);
 
+  syncMobileDockState();
   const mobileTitle = document.getElementById("mobileCurrentWord");
   if (mobileTitle) mobileTitle.textContent = `${fam.headword} (#${fam.rank})`;
 
@@ -903,6 +923,8 @@ function renderFamilyDetail(fam) {
 window.openMobileDrawer = openMobileDrawer;
 window.closeMobileDrawer = closeMobileDrawer;
 window.stepFamily = stepFamily;
+window.speakCurrentHeadword = speakCurrentHeadword;
+window.toggleCurrentFavorite = toggleCurrentFavorite;
 window.speakText = speakText;
 window.setPosFilter = setPosFilter;
 window.toggleGroup = toggleGroup;

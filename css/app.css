@@ -427,3 +427,64 @@
     display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
     background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px;
   }
+
+
+  /* ================= 手机端极简整理与左手拇指左下悬浮坞 ================= */
+  .mobile-left-dock { display: none; }
+
+  @media (max-width: 768px) {
+    /* 手机端隐藏主内容区重复的操作按钮组，避免与顶栏和底坞重复堆砌 */
+    .toolbar-action-group { display: none !important; }
+    .voice-status { display: none !important; }
+    .toolbar-wrap { margin-bottom: 12px; padding-bottom: 10px; gap: 8px; }
+    .toolbar-sub-row { padding: 5px 10px; font-size: 12.5px; }
+    .header-title { font-size: 24px !important; }
+
+    /* 给底部留出安全滚动空间，防止最后一行例句被悬浮坞遮挡 */
+    .main { padding: 14px 14px 88px 14px !important; }
+
+    /* 左下方悬浮拇指坞（贴合左手单手握持拇指弧线） */
+    .mobile-left-dock {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: fixed;
+      left: 12px;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      z-index: 60;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 5px 7px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+    }
+    .dock-btn {
+      border: none;
+      background: #f1f5f9;
+      color: #1e293b;
+      font-size: 13.5px;
+      font-weight: 700;
+      padding: 9px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s, background 0.15s;
+    }
+    .dock-btn:active { transform: scale(0.94); background: #e2e8f0; }
+    .dock-speak-btn {
+      background: #2563eb;
+      color: #ffffff;
+      padding: 9px 15px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+    .dock-speak-btn:active { background: #1d4ed8; }
+    .dock-speak-btn.speaking { background: #16a34a; }
+    #mobileDockFavBtn.active { background: #fef9c3; color: #a16207; }
+  }
