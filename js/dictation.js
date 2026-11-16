@@ -44,11 +44,11 @@ function getChinesePreview(fam) {
 
 export class DictationController {
   constructor(ctx) {
-    this.ctx = ctx; // { getFamilies, getFamilyByRank, speakText, selectFamily, onStateSync }
-    this.activeTab = "setup"; // setup | quiz | wrong | sync
+    this.ctx = ctx;
+    this.activeTab = "setup"; // setup | quiz | summary | wrong | sync
     this.queue = [];
     this.currentIndex = 0;
-    this.hintLevel = 0; // 0: 纯听音, 1: 英文释义, 2: 首字母占位
+    this.hintLevel = 0;
     this.answered = false;
     this.sessionStats = { total: 0, correct: 0, wrong: 0 };
     this.bindGlobalShortcut();
@@ -58,8 +58,21 @@ export class DictationController {
     document.addEventListener("keydown", (e) => {
       const overlay = document.getElementById("dictationModalOverlay");
       if (!overlay || !overlay.classList.contains("open")) return;
+
       if (e.key === "Escape" && this.activeTab !== "quiz") {
         this.close();
+        return;
+      }
+
+      // 默写进行中：无论输入框是否聚焦，按回车都能提交或跳转下一题
+      if (this.activeTab === "quiz" && e.key === "Enter") {
+        if (e.target && e.target.tagName === "BUTTON") return;
+        e.preventDefault();
+        if (!this.answered) {
+          this.submitAnswer(false);
+        } else {
+          this.nextQuestion();
+        }
       }
     });
   }
@@ -86,7 +99,6 @@ export class DictationController {
     const masteredSet = new Set(state.mastered_ranks || []);
     const wrongStats = state.wrong_stats || {};
 
-    // 1. 构建候选词池
     let pool = families.filter(f => {
       if (sourceMode === "FAV") {
         if (!favSet.has(f.rank)) return false;
@@ -108,14 +120,11 @@ export class DictationController {
 
     if (!pool.length) return [];
 
-    // 2. 错题本纯刷题模式：直接按错误次数从高到低排
     if (sourceMode === "WRONG") {
       pool.sort((a, b) => (wrongStats[String(b.rank)]?.count || 0) - (wrongStats[String(a.rank)]?.count || 0));
       return pool.slice(0, count);
     }
 
-    // 3. 三层优先级抽词：
-    // 第一层：若开启「加入该范围错过的词」，优先纳入范围内在错题本里的词（按错误次数降序）
     const wrongInPool = [];
     const unmasteredInPool = [];
     const masteredInPool = [];
@@ -133,13 +142,11 @@ export class DictationController {
 
     wrongInPool.sort((a, b) => (wrongStats[String(b.rank)]?.count || 0) - (wrongStats[String(a.rank)]?.count || 0));
 
-    const prioritized = [
+    return [
       ...wrongInPool,
       ...shuffle(unmasteredInPool),
       ...shuffle(masteredInPool)
-    ];
-
-    return prioritized.slice(0, count);
+    ].slice(0, count);
   }
 
   startSession(config) {
@@ -243,7 +250,7 @@ export class DictationController {
       if (statusEl) {
         statusEl.style.color = "#15803d";
         statusEl.textContent = res.created
-          ? `✅ 已自动创建私密 Gist 并同步成功！Gist ID: ${res.gistId}（请复制此 ID 到其他设备填入即可互通）`
+          ? `✅ 已自动创建私密 Gist 并同步成功！Gist ID: ${res.gistId}`
           : `✅ 双向同步完成！当前已合并 ${res.state.favorites.length} 个收藏、${res.state.mastered_ranks.length} 个已默写词、${Object.keys(res.state.wrong_stats).length} 个错题记录。`;
       }
     } catch (err) {
@@ -340,7 +347,7 @@ export class DictationController {
     } else if (this.activeTab === "quiz") {
       const fam = this.queue[this.currentIndex];
       const pct = Math.round(((this.currentIndex + (this.answered ? 1 : 0)) / this.queue.length) * 100);
-      const wrongCountBefore = state.wrong_stats[String(fam.rank)]?.count || 0;
+      const wrongCountNow = state.wrong_stats[String(fam.rank)]?.count || 0;
       const enHint = getEnglishHint(fam);
       const maskedWord = fam.headword[0] + " " + "_ ".repeat(Math.max(1, fam.headword.length - 1)).trim() + ` (${fam.headword.length} 字母)`;
 
@@ -366,7 +373,7 @@ export class DictationController {
         } else {
           feedbackArea = `
             <div class="quiz-feedback err">
-              <div style="font-weight:700;font-size:15px;">❌ 正确拼写：<span style="text-decoration:underline;">${fam.headword}</span>（你的输入：${lastUserInput || "未填写"}）· 已记入错题本（累计错 ${wrongCountBefore} 次）</div>
+              <div style="font-weight:700;font-size:15px;">❌ 正确拼写：<span style="text-decoration:underline;">${fam.headword}</span>（你的输入：${lastUserInput || "未填写"}）· 累计错 ${wrongCountNow} 次</div>
               <div style="margin-top:4px;">${enHint}</div>
               <div style="margin-top:2px;">${zhDef}</div>
               <div style="margin-top:8px;">
@@ -378,14 +385,14 @@ export class DictationController {
       }
 
       bodyHtml = `
-        <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#64748b;margin-bottom:6px;">
-          <span>进度：第 <strong>${this.currentIndex + 1}</strong> / ${this.queue.length} 词 ${wrongCountBefore ? `<span class="wrong-count-pill" style="margin-left:6px;">历史错 ${wrongCountBefore} 次</span>` : ""}</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#64748b;margin-bottom:6px;">
+          <span>进度：第 <strong>${this.currentIndex + 1}</strong> / ${this.queue.length} 词 ${wrongCountNow ? `<span class="wrong-count-tag" style="margin-left:6px;">历史错 ${wrongCountNow} 次</span>` : ""}</span>
           <span>本轮：✅ ${this.sessionStats.correct} · ❌ ${this.sessionStats.wrong}</span>
         </div>
         <div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
 
         <div class="quiz-audio-box">
-          <div style="font-size:13px;color:#64748b;margin-bottom:10px;">请听发音并拼写出对应的英语单词（支持回车提交 / 下一题）</div>
+          <div style="font-size:13px;color:#64748b;margin-bottom:10px;">请听发音并拼写出对应的英语单词（支持直接按 <strong>Enter ↵</strong> 提交或进入下一题）</div>
           <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
             <button class="tts-btn" style="padding:7px 14px;font-size:13.5px;" onclick="window.__dictCtrl.playCurrentAudio('en-US')">🔊 再听美音</button>
             <button class="tts-btn" style="padding:7px 14px;font-size:13.5px;" onclick="window.__dictCtrl.playCurrentAudio('en-GB')">🔊 听英音</button>
@@ -398,18 +405,16 @@ export class DictationController {
         <input type="text" id="dictSpellInput" class="quiz-input ${this.answered ? (lastIsCorrect ? "correct" : "wrong") : ""}"
           value="${lastUserInput.replace(/"/g, "&quot;")}"
           placeholder="在此输入英文拼写..."
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          ${this.answered ? "readonly" : ""}
-          onkeydown="if(event.key==='Enter'){ event.preventDefault(); window.__dictCtrl.submitAnswer(false); }">
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
         ${feedbackArea}
 
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px;">
           ${!this.answered ? `
             <button class="desktop-nav-btn" onclick="window.__dictCtrl.submitAnswer(true)">不会 / 直接看答案</button>
             <button class="dict-trigger-btn" onclick="window.__dictCtrl.submitAnswer(false)">提交校验 ↵</button>
           ` : `
-            <button class="dict-trigger-btn" onclick="window.__dictCtrl.nextQuestion()">${this.currentIndex + 1 < this.queue.length ? "下一题 ↵" : "查看本轮总结 ↵"}</button>
+            <button class="dict-trigger-btn" onclick="window.__dictCtrl.nextQuestion()">${this.currentIndex + 1 < this.queue.length ? "下一题 (Enter ↵)" : "查看本轮总结 (Enter ↵)"}</button>
           `}
         </div>
       `;
@@ -434,31 +439,33 @@ export class DictationController {
         bodyHtml = `<div style="text-align:center;padding:36px 16px;color:#64748b;">暂无错题记录，继续保持！</div>`;
       } else {
         const rowsHtml = wrongEntries.map(item => `
-          <div class="wrong-list-row">
-            <div style="min-width:0;flex:1;">
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <strong style="font-size:15.5px;color:#0f172a;cursor:pointer;" onclick="window.__dictCtrl.jumpToWord(${item.rank})">${item.fam.headword}</strong>
-                <span style="font-size:11.5px;color:#64748b;">#${item.rank} · ${item.fam.primary_pos}</span>
-                <span class="wrong-count-pill">错 ${item.count} 次</span>
-                <button class="tts-btn" style="padding:1px 6px;font-size:11px;" onclick="window.__dictCtrl.ctx.speakText('${item.fam.headword.replace(/'/g, "\\'")}', 'en-US')">🔊</button>
+          <div class="wrong-card">
+            <div class="wrong-card-main">
+              <div class="wrong-card-top">
+                <span class="wrong-word-title" onclick="window.__dictCtrl.jumpToWord(${item.rank})">${item.fam.headword}</span>
+                <span class="wrong-meta-badge">#${item.rank} · ${item.fam.primary_pos}</span>
+                <span class="wrong-count-tag">错 ${item.count} 次</span>
+                <button class="tts-btn" style="padding:2px 7px;font-size:11.5px;" onclick="window.__dictCtrl.ctx.speakText('${item.fam.headword.replace(/'/g, "\\'")}', 'en-US')">🔊</button>
               </div>
-              <div style="font-size:12.5px;color:#475569;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${getChinesePreview(item.fam)}</div>
+              <div class="wrong-def-text">${getChinesePreview(item.fam)}</div>
             </div>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-              <button class="fallback-btn" onclick="window.__dictCtrl.jumpToWord(${item.rank})">详情</button>
+            <div class="wrong-card-actions">
+              <button class="fallback-btn" onclick="window.__dictCtrl.jumpToWord(${item.rank})">详情 ↗</button>
               <button class="fallback-btn" style="color:#dc2626;border-color:#fecaca;" onclick="window.__dictCtrl.deleteWrong(${item.rank})">移出</button>
             </div>
           </div>
         `).join("");
 
         bodyHtml = `
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
             <span style="font-size:13px;color:#475569;">按累计错误次数从高到低排序（共 ${wrongEntries.length} 词）</span>
             <button class="dict-trigger-btn" onclick="window.__dictCtrl.startSession({ sourceMode: 'WRONG', posFilter: 'ALL', count: Math.min(20, ${wrongEntries.length}), includeWrongReview: true })">
               🔥 一键重默 Top ${Math.min(20, wrongEntries.length)} 高频错题
             </button>
           </div>
-          ${rowsHtml}
+          <div class="wrong-list-container">
+            ${rowsHtml}
+          </div>
         `;
       }
     } else if (this.activeTab === "sync") {
@@ -488,8 +495,8 @@ export class DictationController {
     if (this.activeTab === "quiz") {
       setTimeout(() => {
         const inp = document.getElementById("dictSpellInput");
-        if (inp && !this.answered) inp.focus();
-      }, 30);
+        if (inp) inp.focus();
+      }, 20);
     }
   }
 
