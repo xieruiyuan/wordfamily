@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.15.7";
+const APP_VERSION = "2026.11.15.8";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
@@ -164,6 +164,14 @@ function stepFamily(delta) {
   document.getElementById("mainView").scrollTop = 0;
 }
 
+let activeAudioEl = null;
+
+function updateVoiceBadge(label) {
+  currentVoiceName = label;
+  const badge = document.getElementById("voiceStatusBadge");
+  if (badge) badge.textContent = `当前语音: ${label}`;
+}
+
 function pickBestVoice(lang) {
   const voices = window.speechSynthesis.getVoices();
   const langVoices = voices.filter(v => v.lang.replace("_", "-").toLowerCase() === lang.toLowerCase());
@@ -182,42 +190,97 @@ function pickBestVoice(lang) {
   return candidates[0] || null;
 }
 
-function speakText(text, lang = "en-US", btnEl = null) {
+function fallbackSystemSpeak(text, lang, btnEl) {
   if (!("speechSynthesis" in window)) {
-    alert("当前浏览器不支持语音合成朗读。");
+    if (btnEl) btnEl.classList.remove("speaking");
     return;
   }
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = lang;
-  utter.rate = 1.0;
+  utter.rate = 0.98;
 
   const bestVoice = pickBestVoice(lang);
   if (bestVoice) {
     utter.voice = bestVoice;
-    currentVoiceName = bestVoice.name;
-    const badge = document.getElementById("voiceStatusBadge");
-    if (badge) badge.textContent = `当前语音: ${bestVoice.name}`;
+    updateVoiceBadge(`系统备用 (${bestVoice.name})`);
   }
 
-  if (btnEl) {
-    btnEl.classList.add("speaking");
-    utter.onend = () => btnEl.classList.remove("speaking");
-    utter.onerror = () => btnEl.classList.remove("speaking");
-  }
+  utter.onend = () => { if (btnEl) btnEl.classList.remove("speaking"); };
+  utter.onerror = () => { if (btnEl) btnEl.classList.remove("speaking"); };
   window.speechSynthesis.speak(utter);
+}
+
+function speakText(text, lang = "en-US", btnEl = null) {
+  const cleanText = String(text || "").trim();
+  if (!cleanText) return;
+
+  // 停止正在播放的音频与系统语音
+  if (activeAudioEl) {
+    try { activeAudioEl.pause(); activeAudioEl.currentTime = 0; } catch {}
+    activeAudioEl = null;
+  }
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  document.querySelectorAll(".tts-btn.speaking").forEach(b => b.classList.remove("speaking"));
+  if (btnEl) btnEl.classList.add("speaking");
+
+  const isUK = lang.toLowerCase().includes("gb") || lang.toLowerCase().includes("uk");
+  const accentType = isUK ? 1 : 2; // 1: 英音真人, 2: 美音真人
+  const accentLabel = isUK ? "在线真人 (英音)" : "在线真人 (美音)";
+
+  // 清理短语占位符（如 sb / sth）以便接口流畅朗读
+  const ttsQuery = cleanText
+    .replace(/\bsb\/sth\b/gi, "something")
+    .replace(/\bsb\b/gi, "somebody")
+    .replace(/\bsth\b/gi, "something");
+
+  // 超过 120 字符的长句直接走在线流或分段，优先尝试在线真人音频流
+  const audioUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(ttsQuery)}&type=${accentType}`;
+  const audio = new Audio(audioUrl);
+  activeAudioEl = audio;
+
+  let settled = false;
+  const fallbackTimer = setTimeout(() => {
+    if (!settled) {
+      settled = true;
+      try { audio.pause(); } catch {}
+      fallbackSystemSpeak(cleanText, lang, btnEl);
+    }
+  }, 2200);
+
+  audio.onplaying = () => {
+    settled = true;
+    clearTimeout(fallbackTimer);
+    updateVoiceBadge(accentLabel);
+  };
+
+  audio.onended = () => {
+    clearTimeout(fallbackTimer);
+    if (btnEl) btnEl.classList.remove("speaking");
+    if (activeAudioEl === audio) activeAudioEl = null;
+  };
+
+  audio.onerror = () => {
+    if (!settled) {
+      settled = true;
+      clearTimeout(fallbackTimer);
+      fallbackSystemSpeak(cleanText, lang, btnEl);
+    }
+  };
+
+  audio.play().catch(() => {
+    if (!settled) {
+      settled = true;
+      clearTimeout(fallbackTimer);
+      fallbackSystemSpeak(cleanText, lang, btnEl);
+    }
+  });
 }
 
 if ("speechSynthesis" in window) {
   window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => {
-    const v = pickBestVoice("en-US");
-    if (v) {
-      currentVoiceName = v.name;
-      const badge = document.getElementById("voiceStatusBadge");
-      if (badge) badge.textContent = `当前语音: ${v.name}`;
-    }
-  };
 }
 
 function escapeAttr(str) {
