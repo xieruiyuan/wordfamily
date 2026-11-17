@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.17.07";
+const APP_VERSION = "2026.11.17.08";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -598,7 +598,9 @@ document.getElementById("jsonFile").addEventListener("change", function(e) {
 });
 
 let searchTimer = null;
-document.getElementById("searchInput").addEventListener("input", () => {
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  const btn = document.getElementById("clearSearchBtn");
+  if (btn) btn.style.display = e.target.value ? "flex" : "none";
   clearTimeout(searchTimer);
   searchTimer = setTimeout(applyFilters, 110);
 });
@@ -666,12 +668,7 @@ async function setSidebarMode(mode) {
 
 function selectTopicFamily(rank, subId) {
   activeTopicSubKey = subId;
-  const searchInp = document.getElementById("searchInput");
-  const hadQuery = searchInp && searchInp.value.trim().length > 0;
-  if (hadQuery) {
-    searchInp.value = "";
-    applyFilters();
-  }
+
   // 直接从当前主题树锁定该二级子目录的完整序列
   for (const cat of topicTaxonomy) {
     for (const sub of (cat.subcategories || [])) {
@@ -690,12 +687,18 @@ function selectTopicFamily(rank, subId) {
 }
 
 function selectFreqFamily(rank) {
-  const searchInp = document.getElementById("searchInput");
-  if (searchInp && searchInp.value.trim()) {
-    searchInp.value = "";
-    applyFilters();
-  }
   selectFamily(rank, true, true);
+}
+
+function clearSearchBox() {
+  const inp = document.getElementById("searchInput");
+  if (inp) {
+    inp.value = "";
+    inp.focus();
+  }
+  const btn = document.getElementById("clearSearchBtn");
+  if (btn) btn.style.display = "none";
+  applyFilters();
 }
 
 function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
@@ -1249,6 +1252,7 @@ window.toggleGroup = toggleGroup;
 window.selectFamily = selectFamily;
 window.selectTopicFamily = selectTopicFamily;
 window.selectFreqFamily = selectFreqFamily;
+window.clearSearchBox = clearSearchBox;
 window.toggleRare = toggleRare;
 window.toggleImages = toggleImages;
 window.toggleFavorite = toggleFavorite;

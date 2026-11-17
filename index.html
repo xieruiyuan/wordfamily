@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>英语词族与派生形态树词典</title>
-<link rel="stylesheet" href="./css/app.css?v=2026.11.17.07">
+<link rel="stylesheet" href="./css/app.css?v=2026.11.17.08">
 </head>
 <body>
 
@@ -22,8 +22,9 @@
       <button class="mobile-close-btn" onclick="closeMobileDrawer()">✕ 关闭</button>
     </div>
   </div>
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或词形...">
+  <div class="search-box" style="position:relative;">
+    <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或词形..." style="padding-right:32px;">
+    <button id="clearSearchBtn" type="button" onclick="clearSearchBox()" title="清空搜索 (Esc)" style="display:none;position:absolute;right:20px;top:50%;transform:translateY(-50%);width:20px;height:20px;border:none;border-radius:50%;background:#cbd5e1;color:#ffffff;font-size:12px;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>
   <div class="view-mode-bar" id="viewModeBar">
     <button class="view-mode-btn active" data-mode="freq" onclick="setSidebarMode('freq')">📊 按词频</button>
@@ -83,6 +84,6 @@
   <div class="dict-modal" id="dictationModalContent"></div>
 </div>
 
-<script type="module" src="./js/app.js?v=2026.11.17.07"></script>
+<script type="module" src="./js/app.js?v=2026.11.17.08"></script>
 </body>
 </html>
