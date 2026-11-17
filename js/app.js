@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.12";
+const APP_VERSION = "2026.11.17.03";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -15,6 +15,7 @@ let activeRank = null;
 let verbPhrasesMap = {};
 let topicTaxonomy = [];
 let sidebarMode = "freq";
+let activeTopicSubKey = null;
 
 let visualHintByRank = new Map();
 const VISUAL_SUB_HINTS = {
@@ -698,7 +699,7 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
         const fam = familyByRank.get(it.rank);
         if (!fam) return "";
         return `
-          <div class="family-item ${fam.rank === activeRank ? "active" : ""}" data-rank="${fam.rank}" onclick="selectFamily(${fam.rank}, true, true)">
+          <div class="family-item ${fam.rank === activeRank ? "active" : ""}" data-rank="${fam.rank}" data-sub-key="${subId}" onclick="activeTopicSubKey='${subId}';selectFamily(${fam.rank}, true, true)">
             <span>${favoriteRanks.has(fam.rank) ? "⭐ " : ""}${fam.headword}</span>
             <span class="family-meta">
               ${it.note ? `<span class="topic-hit-note" title="${escapeAttr(it.note)}">${it.note}</span>` : ""}
@@ -736,7 +737,35 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
     `;
   });
 
-  if (activeRankOrder.length) {
+  // 精准锁定当前所在的二级分类作为「上一词 / 下一词」翻页序列，避免多分类展开时串台
+  let lockedItems = [];
+  if (activeTopicSubKey) {
+    for (const cat of topicTaxonomy) {
+      for (const sub of (cat.subcategories || [])) {
+        if (`topic-sub-${cat.id}-${sub.id}` === activeTopicSubKey) {
+          lockedItems = (sub.items || []).filter(it => allowedRanksSet.has(it.rank)).map(it => familyByRank.get(it.rank)).filter(Boolean);
+          break;
+        }
+      }
+      if (lockedItems.length) break;
+    }
+  }
+  if (!lockedItems.length && activeRank) {
+    for (const cat of topicTaxonomy) {
+      for (const sub of (cat.subcategories || [])) {
+        const subItems = (sub.items || []).filter(it => allowedRanksSet.has(it.rank));
+        if (subItems.some(it => it.rank === activeRank)) {
+          activeTopicSubKey = `topic-sub-${cat.id}-${sub.id}`;
+          lockedItems = subItems.map(it => familyByRank.get(it.rank)).filter(Boolean);
+          break;
+        }
+      }
+      if (lockedItems.length) break;
+    }
+  }
+  if (lockedItems.length) {
+    currentFilteredList = lockedItems;
+  } else if (activeRankOrder.length) {
     currentFilteredList = activeRankOrder;
   }
 
@@ -809,6 +838,26 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
 }
 
 function revealAndHighlightInSidebar(rank) {
+  if (sidebarMode === "topic") {
+    const q = document.getElementById("searchInput").value.trim();
+    const allowed = new Set((currentFilteredList.length ? currentFilteredList : allFamilies).map(f => f.rank));
+    if (activeTopicSubKey) {
+      openState.set(activeTopicSubKey, true);
+      const parts = activeTopicSubKey.split("-");
+      if (parts.length >= 4) openState.set(`topic-cat-${parts[2]}`, true);
+    }
+    renderTopicSidebar(allowed, Boolean(q));
+    const selector = activeTopicSubKey
+      ? `.family-item[data-sub-key="${activeTopicSubKey}"][data-rank="${rank}"]`
+      : `.family-item[data-rank="${rank}"]`;
+    const topicEl = document.querySelector(selector) || document.querySelector(`.family-item[data-rank="${rank}"]`);
+    document.querySelectorAll(".family-item").forEach(item => item.classList.remove("active"));
+    if (topicEl) {
+      topicEl.classList.add("active");
+      topicEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    return;
+  }
   let el = document.querySelector(`.family-item[data-rank="${rank}"]`);
   if (!el) {
     const band = FREQ_BANDS.find(b => rank >= b.min && rank <= b.max);
