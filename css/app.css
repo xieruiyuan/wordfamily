@@ -192,7 +192,10 @@
   .lemma-card.tier-core { border-left-color: #2563eb; background: #f8faff; }
   .lemma-card.tier-rare { opacity: 0.8; }
   .hide-rare .tier-rare { display: none; }
-  .hide-images .lemma-visual-wrap { display: none !important; }
+  .hide-images .lemma-visual-wrap { display: none !important; 
+  background: #f8fafc;
+  padding: 4px;
+}
   .lemma-body-flex { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
   .lemma-text-col { flex: 1; min-width: 0; }
   .lemma-visual-wrap {
@@ -202,7 +205,7 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.04); cursor: zoom-in;
   }
   .lemma-visual-wrap.loading { background: #f8fafc; }
-  .lemma-visual-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s; }
+  .lemma-visual-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; transition: transform 0.2s; }
   .lemma-visual-wrap:hover img { transform: scale(1.05); }
   @media (max-width: 768px) {
     .lemma-visual-wrap { width: 88px; height: 88px; }
