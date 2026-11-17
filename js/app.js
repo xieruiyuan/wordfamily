@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.17.06";
+const APP_VERSION = "2026.11.17.07";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -667,11 +667,26 @@ async function setSidebarMode(mode) {
 function selectTopicFamily(rank, subId) {
   activeTopicSubKey = subId;
   const searchInp = document.getElementById("searchInput");
-  if (searchInp && searchInp.value.trim()) {
+  const hadQuery = searchInp && searchInp.value.trim().length > 0;
+  if (hadQuery) {
     searchInp.value = "";
     applyFilters();
   }
-  selectFamily(rank, true, true);
+  // 直接从当前主题树锁定该二级子目录的完整序列
+  for (const cat of topicTaxonomy) {
+    for (const sub of (cat.subcategories || [])) {
+      if (`topic-sub-${cat.id}-${sub.id}` === subId) {
+        const baseSet = new Set(getBaseFilteredFamilies().map(f => f.rank));
+        const list = (sub.items || [])
+          .filter(it => baseSet.has(it.rank))
+          .map(it => familyByRank.get(it.rank))
+          .filter(Boolean);
+        if (list.length) currentFilteredList = list;
+        break;
+      }
+    }
+  }
+  selectFamily(rank, true, true, true);
 }
 
 function selectFreqFamily(rank) {
@@ -906,7 +921,7 @@ function revealAndHighlightInSidebar(rank) {
   }
 }
 
-function selectFamily(rank, autoCloseMobile = true, syncHash = true) {
+function selectFamily(rank, autoCloseMobile = true, syncHash = true, skipSidebarRerender = false) {
   activeRank = rank;
   const fam = familyByRank.get(rank);
   if (!fam) return;
@@ -918,7 +933,16 @@ function selectFamily(rank, autoCloseMobile = true, syncHash = true) {
     }
   }
 
-  revealAndHighlightInSidebar(rank);
+  if (skipSidebarRerender && sidebarMode === "topic" && activeTopicSubKey) {
+    document.querySelectorAll(".family-item").forEach(item => {
+      const match = Number(item.dataset.rank) === rank && item.dataset.subKey === activeTopicSubKey;
+      item.classList.toggle("active", match);
+      if (match) item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  } else {
+    revealAndHighlightInSidebar(rank);
+  }
+
   renderFamilyDetail(fam);
 
   syncMobileDockState();
