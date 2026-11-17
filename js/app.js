@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.9";
+const APP_VERSION = "2026.11.16.10";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -15,6 +15,41 @@ let activeRank = null;
 let verbPhrasesMap = {};
 let topicTaxonomy = [];
 let sidebarMode = "freq";
+
+let visualHintByRank = new Map();
+const VISUAL_SUB_HINTS = {
+  mammals: "animal",
+  birds: "bird",
+  reptiles_amphibians: "reptile",
+  marine_life: "fish",
+  insects_invertebrates: "insect",
+  trees_plants: "plant",
+  crops_produce: "food",
+  anatomy_organs: "anatomy",
+  food_cooking: "food",
+  clothing_textiles: "clothing",
+  architecture_home: "",
+  transport_vehicles: "vehicle",
+  arts_music: ""
+};
+
+function buildVisualHintsFromTaxonomy(taxList) {
+  visualHintByRank.clear();
+  for (const cat of (taxList || [])) {
+    for (const sub of (cat.subcategories || [])) {
+      if (sub.id in VISUAL_SUB_HINTS && !visualHintByRank.has) {}
+      if (Object.prototype.hasOwnProperty.call(VISUAL_SUB_HINTS, sub.id)) {
+        const hint = VISUAL_SUB_HINTS[sub.id];
+        for (const it of (sub.items || [])) {
+          if (!visualHintByRank.has(it.rank)) {
+            visualHintByRank.set(it.rank, hint);
+          }
+        }
+      }
+    }
+  }
+}
+
 
 let studyState = loadStudyState();
 let favoriteRanks = new Set(studyState.favorites);
@@ -104,20 +139,22 @@ function toggleImages(checked) {
   if (showImages) loadVisibleVisuals();
 }
 
-async function fetchWikiThumb(word) {
+async function fetchWikiThumb(word, hint = "") {
   const key = word.toLowerCase();
-  if (wikiImageCache.has(key)) return wikiImageCache.get(key);
+  const cacheKey = hint ? `${key}|${hint}` : key;
+  if (wikiImageCache.has(cacheKey)) return wikiImageCache.get(cacheKey);
   try {
     const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}`;
     const resp = await fetch(sumUrl);
     if (resp.ok) {
       const data = await resp.json();
       if (data.type !== "disambiguation" && data.thumbnail?.source) {
-        wikiImageCache.set(key, data.thumbnail.source);
+        wikiImageCache.set(cacheKey, data.thumbnail.source);
         return data.thumbnail.source;
       }
     }
-    const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(key)}&gsrlimit=3&prop=pageimages&pithumbsize=320&format=json&origin=*`;
+    const searchQuery = hint ? `${key} ${hint}` : key;
+    const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(searchQuery)}&gsrlimit=3&prop=pageimages&pithumbsize=320&format=json&origin=*`;
     const sResp = await fetch(apiUrl);
     if (sResp.ok) {
       const sData = await sResp.json();
@@ -125,14 +162,14 @@ async function fetchWikiThumb(word) {
       pages.sort((a, b) => (a.index || 99) - (b.index || 99));
       const hit = pages.find(p => p.thumbnail?.source);
       if (hit) {
-        wikiImageCache.set(key, hit.thumbnail.source);
+        wikiImageCache.set(cacheKey, hit.thumbnail.source);
         return hit.thumbnail.source;
       }
     }
-    wikiImageCache.set(key, null);
+    wikiImageCache.set(cacheKey, null);
     return null;
   } catch {
-    wikiImageCache.set(key, null);
+    wikiImageCache.set(cacheKey, null);
     return null;
   }
 }
@@ -141,7 +178,8 @@ function loadVisibleVisuals() {
   if (!showImages) return;
   document.querySelectorAll(".lemma-visual-wrap[data-visual-word]").forEach(async (box) => {
     const word = box.dataset.visualWord;
-    const thumb = await fetchWikiThumb(word);
+    const hint = box.dataset.visualHint || "";
+    const thumb = await fetchWikiThumb(word, hint);
     if (!thumb) {
       box.remove();
       return;
@@ -532,6 +570,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const data = await famResp.json();
     initData(data, "已自动加载");
+    ensureTopicTaxonomyLoaded();
   } catch (err) {
     document.getElementById("loadStatus").textContent = "自动加载受限，请选本地文件";
     document.getElementById("mainView").innerHTML = `
@@ -607,6 +646,7 @@ async function ensureTopicTaxonomyLoaded() {
     const resp = await fetch(TOPIC_URL);
     if (resp.ok) {
       topicTaxonomy = (await resp.json()) || [];
+      buildVisualHintsFromTaxonomy(topicTaxonomy);
     }
   } catch (e) {
     console.warn("主题索引加载失败:", e);
@@ -1016,9 +1056,12 @@ function renderFamilyDetail(fam) {
         `;
       }).join("");
 
+      const topicHint = visualHintByRank.has(fam.rank) ? visualHintByRank.get(fam.rank) : null;
       const visualHtml = (b.pos === "n." && l.img)
         ? `<div class="lemma-visual-wrap" onclick="window.open('./images/${l.img}', '_blank')" title="点击查看大图"><img src="./images/${l.img}" alt="${wSafe}" loading="lazy" onerror="this.parentElement.remove()"></div>`
-        : "";
+        : ((b.pos === "n." && topicHint !== null && l.tier !== "rare")
+            ? `<div class="lemma-visual-wrap loading" data-visual-word="${wSafe}" data-visual-hint="${escapeAttr(topicHint)}" title="点击查看大图"></div>`
+            : "");
 
       return `
         <div class="lemma-card tier-${l.tier}">
