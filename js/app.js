@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.6";
+const APP_VERSION = "2026.11.16.7";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 
