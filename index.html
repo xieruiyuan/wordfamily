@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>英语词族与派生形态树词典</title>
+<link rel="stylesheet" href="./css/app.css?v=2026.11.17.07">
+</head>
+<body>
+
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeMobileDrawer()"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="status-bar">
+    <span id="loadStatus">正在自动加载词库...</span>
+    <div class="status-actions">
+      <button class="fallback-btn" onclick="window.__dictCtrl.open('setup')" title="单词默写与错题本">✍️ 默写</button>
+      <label class="fallback-btn" title="本地离线浏览时可手动选择 JSON">
+        本地文件
+        <input type="file" id="jsonFile" accept=".json" style="display:none;">
+      </label>
+      <button class="mobile-close-btn" onclick="closeMobileDrawer()">✕ 关闭</button>
+    </div>
+  </div>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或词形...">
+  </div>
+  <div class="view-mode-bar" id="viewModeBar">
+    <button class="view-mode-btn active" data-mode="freq" onclick="setSidebarMode('freq')">📊 按词频</button>
+    <button class="view-mode-btn" data-mode="topic" onclick="setSidebarMode('topic')">🗂️ 按主题</button>
+  </div>
+  <div class="pos-filter-bar" id="posFilterBar">
+    <button class="pos-chip active" data-pos="ALL" onclick="setPosFilter('ALL')">全部</button>
+    <button class="pos-chip" data-pos="v." onclick="setPosFilter('v.')">动词 v.</button>
+    <button class="pos-chip" data-pos="n." onclick="setPosFilter('n.')">名词 n.</button>
+    <button class="pos-chip" data-pos="adj." onclick="setPosFilter('adj.')">形容词 adj.</button>
+    <button class="pos-chip" data-pos="adv." onclick="setPosFilter('adv.')">副词 adv.</button>
+    <button class="pos-chip" data-pos="OTHER" onclick="setPosFilter('OTHER')">虚词/其他</button>
+    <button class="pos-chip" data-pos="FAV" onclick="setPosFilter('FAV')">⭐ 已收藏 <span id="favCountBadge" style="opacity:0.8;"></span></button>
+  </div>
+    <label class="secondary-pos-toggle" title="开启后，只要词族包含所选词性的非罕见词条（如 wrench 的名词分支），即使主词性不符也会显示">
+      <input type="checkbox" id="includeSecondaryPosCheck" onchange="toggleSecondaryPos(this.checked)">
+      <span>包含兼类词性（非罕见分支也参与筛选）</span>
+    </label>
+  <div id="favToolsBar" style="display:none;padding:6px 14px;background:#fefce8;border-bottom:1px solid #fde68a;font-size:12px;justify-content:space-between;align-items:center;color:#854d0e;">
+    <span>生词本备份：</span>
+    <div style="display:flex;gap:6px;">
+      <button class="fallback-btn" style="border-color:#fde047;color:#854d0e;" onclick="exportFavorites()">导出 JSON</button>
+      <label class="fallback-btn" style="border-color:#fde047;color:#854d0e;">
+        导入
+        <input type="file" accept=".json" style="display:none;" onchange="importFavorites(event)">
+      </label>
+    </div>
+  </div>
+  <div class="family-list" id="familyList"></div>
+</div>
+
+<div class="main-wrapper">
+  <div class="mobile-topbar">
+    <button class="mobile-menu-btn" onclick="openMobileDrawer()">☰ 词库</button>
+    <span id="mobileCurrentWord" style="font-weight:700; font-size:14.5px; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-align:center;"></span>
+    <button class="mobile-nav-btn" style="background:#2563eb;color:#ffffff;border-color:#2563eb;padding:5px 10px;" onclick="window.__dictCtrl.open('setup')">✍️ 默写</button>
+  </div>
+
+  <div class="main" id="mainView">
+    <div style="padding:40px 20px; text-align:center; color:#64748b;">
+      <h3>正在加载英语词族数据库...</h3>
+      <p style="font-size:13px;">首次打开需下载词典数据包，加载后浏览器会自动缓存。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 手机端左手单手操作：左下方悬浮拇指坞 -->
+<div class="mobile-left-dock" id="mobileLeftDock">
+  <button class="dock-btn" onclick="stepFamily(-1)" title="上一词">‹ 上词</button>
+  <button class="dock-btn dock-speak-btn" id="mobileDockSpeakBtn" onclick="speakCurrentHeadword('en-US')" title="朗读当前单词">🔊 朗读</button>
+  <button class="dock-btn" onclick="stepFamily(1)" title="下一词">下词 ›</button>
+  <button class="dock-btn" id="mobileDockFavBtn" onclick="toggleCurrentFavorite()" title="收藏">☆</button>
+</div>
+
+<!-- 默写、错题本与 GitHub Gist 云同步模态框 -->
+<div class="modal-overlay" id="dictationModalOverlay" onclick="if(event.target===this) window.__dictCtrl.close()">
+  <div class="dict-modal" id="dictationModalContent"></div>
+</div>
+
+<script type="module" src=\"./js/app.js?v=2026.11.17.07\"></script>
+</body>
+</html>
