@@ -1,12 +1,48 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.17.20";
+const APP_VERSION = "2026.11.17.19";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
 
 let allFamilies = [];
+
+const loadedShards = new Set();
+const shardPromises = new Map();
+let latestSelectToken = 0;
+
+async function ensureFullFamily(rank) {
+  const fam = familyByRank.get(rank);
+  if (!fam || !fam._lite) return fam;
+  const sid = Math.floor((rank - 1) / 1000);
+  if (loadedShards.has(sid)) return familyByRank.get(rank);
+  if (!shardPromises.has(sid)) {
+    const file = `./shards/shard_${String(sid).padStart(2, "0")}.json?v=${APP_VERSION}`;
+    const p = fetch(file)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(list => {
+        for (const fullFam of list) {
+          const idx = allFamilies.findIndex(x => x.rank === fullFam.rank);
+          if (idx !== -1) allFamilies[idx] = fullFam;
+          familyByRank.set(fullFam.rank, fullFam);
+        }
+        loadedShards.add(sid);
+      })
+      .catch(err => {
+        shardPromises.delete(sid);
+        console.warn("Shard load failed:", sid, err);
+      });
+    shardPromises.set(sid, p);
+  }
+  await shardPromises.get(sid);
+  return familyByRank.get(rank);
+}
+
+window.__ensureFullFamilies = async (ranks) => {
+  await Promise.all(ranks.map(r => ensureFullFamily(r)));
+};
+
 let familyByRank = new Map();
 let familyByWord = new Map();
 let searchIndexMap = new Map();
@@ -927,7 +963,15 @@ function revealAndHighlightInSidebar(rank) {
   }
 }
 
-function selectFamily(rank, autoCloseMobile = true, syncHash = true, skipSidebarRerender = false) {
+async function selectFamily(rank, autoCloseMobile = true, syncHash = true, skipSidebarRerender = false) {
+  const reqToken = ++latestSelectToken;
+  const targetCheck = familyByRank.get(rank);
+  if (targetCheck && targetCheck._lite) {
+    const mv = document.getElementById("mainView");
+    if (mv) mv.innerHTML = `<div style="padding:40px 20px;text-align:center;color:#64748b;">正在加载词条详情...</div>`;
+    await ensureFullFamily(rank);
+    if (reqToken !== latestSelectToken) return;
+  }
   activeRank = rank;
   const fam = familyByRank.get(rank);
   if (!fam) return;
