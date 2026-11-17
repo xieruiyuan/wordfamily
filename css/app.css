@@ -523,3 +523,5 @@
   }
 
 .tier-UNCOMMON, .badge-UNCOMMON, [data-tier='UNCOMMON'] { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+.tag-uncommon { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
