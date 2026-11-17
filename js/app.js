@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.17.04";
+const APP_VERSION = "2026.11.17.06";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -38,7 +38,6 @@ function buildVisualHintsFromTaxonomy(taxList) {
   visualHintByRank.clear();
   for (const cat of (taxList || [])) {
     for (const sub of (cat.subcategories || [])) {
-      if (sub.id in VISUAL_SUB_HINTS && !visualHintByRank.has) {}
       if (Object.prototype.hasOwnProperty.call(VISUAL_SUB_HINTS, sub.id)) {
         const hint = VISUAL_SUB_HINTS[sub.id];
         for (const it of (sub.items || [])) {
@@ -50,7 +49,6 @@ function buildVisualHintsFromTaxonomy(taxList) {
     }
   }
 }
-
 
 let studyState = loadStudyState();
 let favoriteRanks = new Set(studyState.favorites);
@@ -280,7 +278,6 @@ function speakText(text, lang = "en-US", btnEl = null) {
   const cleanText = String(text || "").trim();
   if (!cleanText) return;
 
-  // 停止正在播放的音频与系统语音
   if (activeAudioEl) {
     try { activeAudioEl.pause(); activeAudioEl.currentTime = 0; } catch {}
     activeAudioEl = null;
@@ -292,16 +289,14 @@ function speakText(text, lang = "en-US", btnEl = null) {
   if (btnEl) btnEl.classList.add("speaking");
 
   const isUK = lang.toLowerCase().includes("gb") || lang.toLowerCase().includes("uk");
-  const accentType = isUK ? 1 : 2; // 1: 英音真人, 2: 美音真人
+  const accentType = isUK ? 1 : 2;
   const accentLabel = isUK ? "在线真人 (英音)" : "在线真人 (美音)";
 
-  // 清理短语占位符（如 sb / sth）以便接口流畅朗读
   const ttsQuery = cleanText
     .replace(/\bsb\/sth\b/gi, "something")
     .replace(/\bsb\b/gi, "somebody")
     .replace(/\bsth\b/gi, "something");
 
-  // 超过 120 字符的长句直接走在线流或分段，优先尝试在线真人音频流
   const audioUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(ttsQuery)}&type=${accentType}`;
   const audio = new Audio(audioUrl);
   activeAudioEl = audio;
@@ -514,10 +509,8 @@ function matchesPos(fam) {
   if (onlyFav && !favoriteRanks.has(fam.rank)) return false;
   if (selectedPos === "ALL") return true;
 
-  // 1. 主词性直接命中
   if (isPosMatch(fam.primary_pos, selectedPos)) return true;
 
-  // 2. 若开启「包含兼类词性」，检查是否存在目标词性且包含非罕见（tier !== "rare"）的词条
   if (includeSecondaryPos) {
     return (fam.pos_branches || []).some(branch => {
       if (!isPosMatch(branch.pos, selectedPos)) return false;
@@ -528,13 +521,18 @@ function matchesPos(fam) {
   return false;
 }
 
-function applyFilters() {
+function getBaseFilteredFamilies() {
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
-  const filtered = allFamilies.filter(f => {
+  return allFamilies.filter(f => {
     if (!matchesPos(f)) return false;
     if (!q) return true;
     return matchesSearchQuery(f, q);
   });
+}
+
+function applyFilters() {
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const filtered = getBaseFilteredFamilies();
 
   currentFilteredList = filtered;
 
@@ -640,7 +638,6 @@ function toggleGroup(groupId) {
   openState.set(groupId, !willCollapse);
 }
 
-
 async function ensureTopicTaxonomyLoaded() {
   if (topicTaxonomy.length) return topicTaxonomy;
   try {
@@ -665,6 +662,25 @@ async function setSidebarMode(mode) {
     await ensureTopicTaxonomyLoaded();
   }
   applyFilters();
+}
+
+function selectTopicFamily(rank, subId) {
+  activeTopicSubKey = subId;
+  const searchInp = document.getElementById("searchInput");
+  if (searchInp && searchInp.value.trim()) {
+    searchInp.value = "";
+    applyFilters();
+  }
+  selectFamily(rank, true, true);
+}
+
+function selectFreqFamily(rank) {
+  const searchInp = document.getElementById("searchInput");
+  if (searchInp && searchInp.value.trim()) {
+    searchInp.value = "";
+    applyFilters();
+  }
+  selectFamily(rank, true, true);
 }
 
 function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
@@ -698,8 +714,9 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
       const itemsHtml = matchedItems.map(it => {
         const fam = familyByRank.get(it.rank);
         if (!fam) return "";
+        const isActive = fam.rank === activeRank && (!activeTopicSubKey || activeTopicSubKey === subId);
         return `
-          <div class="family-item ${fam.rank === activeRank ? "active" : ""}" data-rank="${fam.rank}" data-sub-key="${subId}" onclick="activeTopicSubKey='${subId}';selectFamily(${fam.rank}, true, true)">
+          <div class="family-item ${isActive ? "active" : ""}" data-rank="${fam.rank}" data-sub-key="${subId}" onclick="selectTopicFamily(${fam.rank}, '${subId}')">
             <span>${favoriteRanks.has(fam.rank) ? "⭐ " : ""}${fam.headword}</span>
             <span class="family-meta">
               ${it.note ? `<span class="topic-hit-note" title="${escapeAttr(it.note)}">${it.note}</span>` : ""}
@@ -737,13 +754,16 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
     `;
   });
 
-  // 精准锁定当前所在的二级分类作为「上一词 / 下一词」翻页序列，避免多分类展开时串台
+  // 严格锁定当前所在的二级分类作为「上一词 / 下一词」翻页序列，杜绝多分类同名项抢跳
   let lockedItems = [];
   if (activeTopicSubKey) {
     for (const cat of topicTaxonomy) {
       for (const sub of (cat.subcategories || [])) {
         if (`topic-sub-${cat.id}-${sub.id}` === activeTopicSubKey) {
-          lockedItems = (sub.items || []).filter(it => allowedRanksSet.has(it.rank)).map(it => familyByRank.get(it.rank)).filter(Boolean);
+          lockedItems = (sub.items || [])
+            .filter(it => allowedRanksSet.has(it.rank))
+            .map(it => familyByRank.get(it.rank))
+            .filter(Boolean);
           break;
         }
       }
@@ -763,6 +783,7 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
       if (lockedItems.length) break;
     }
   }
+
   if (lockedItems.length) {
     currentFilteredList = lockedItems;
   } else if (activeRankOrder.length) {
@@ -799,7 +820,7 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
       const isSubOpen = forceExpandAll ? true : (openState.get(subId) || false);
 
       const itemsHtml = subItems.map(f => `
-        <div class="family-item ${f.rank === activeRank ? "active" : ""}" data-rank="${f.rank}" onclick="selectFamily(${f.rank}, true, true)">
+        <div class="family-item ${f.rank === activeRank ? "active" : ""}" data-rank="${f.rank}" onclick="selectFreqFamily(${f.rank})">
           <span>${favoriteRanks.has(f.rank) ? "⭐ " : ""}${f.headword}</span>
           <span class="family-meta">
             ${selectedPos === "ALL" ? `<span class="mini-pos">${f.primary_pos}</span>` : ""}
@@ -840,17 +861,21 @@ function renderGroupedSidebar(list, forceExpandAll = false) {
 function revealAndHighlightInSidebar(rank) {
   if (sidebarMode === "topic") {
     const q = document.getElementById("searchInput").value.trim();
-    const allowed = new Set((currentFilteredList.length ? currentFilteredList : allFamilies).map(f => f.rank));
+    const baseAllowed = new Set(getBaseFilteredFamilies().map(f => f.rank));
     if (activeTopicSubKey) {
       openState.set(activeTopicSubKey, true);
-      const parts = activeTopicSubKey.split("-");
-      if (parts.length >= 4) openState.set(`topic-cat-${parts[2]}`, true);
+      for (const cat of topicTaxonomy) {
+        if ((cat.subcategories || []).some(s => `topic-sub-${cat.id}-${s.id}` === activeTopicSubKey)) {
+          openState.set(`topic-cat-${cat.id}`, true);
+          break;
+        }
+      }
     }
-    renderTopicSidebar(allowed, Boolean(q));
-    const selector = activeTopicSubKey
+    renderTopicSidebar(baseAllowed, Boolean(q));
+    const exactSel = activeTopicSubKey
       ? `.family-item[data-sub-key="${activeTopicSubKey}"][data-rank="${rank}"]`
       : `.family-item[data-rank="${rank}"]`;
-    const topicEl = document.querySelector(selector) || document.querySelector(`.family-item[data-rank="${rank}"]`);
+    const topicEl = document.querySelector(exactSel) || document.querySelector(`.family-item[data-rank="${rank}"]`);
     document.querySelectorAll(".family-item").forEach(item => item.classList.remove("active"));
     if (topicEl) {
       topicEl.classList.add("active");
@@ -858,6 +883,7 @@ function revealAndHighlightInSidebar(rank) {
     }
     return;
   }
+
   let el = document.querySelector(`.family-item[data-rank="${rank}"]`);
   if (!el) {
     const band = FREQ_BANDS.find(b => rank >= b.min && rank <= b.max);
@@ -868,7 +894,7 @@ function revealAndHighlightInSidebar(rank) {
       const end = Math.min(start + activeStep - 1, band.max);
       openState.set(`sub-${start}-${end}`, true);
       const q = document.getElementById("searchInput").value.trim();
-      renderGroupedSidebar(currentFilteredList.length ? currentFilteredList : allFamilies, Boolean(q));
+      renderGroupedSidebar(getBaseFilteredFamilies(), Boolean(q));
       el = document.querySelector(`.family-item[data-rank="${rank}"]`);
     }
   }
@@ -1186,7 +1212,6 @@ function renderFamilyDetail(fam) {
   loadVisibleVisuals();
 }
 
-// 挂载全局供内联事件调用
 window.openMobileDrawer = openMobileDrawer;
 window.closeMobileDrawer = closeMobileDrawer;
 window.stepFamily = stepFamily;
@@ -1198,6 +1223,8 @@ window.setPosFilter = setPosFilter;
 window.toggleSecondaryPos = toggleSecondaryPos;
 window.toggleGroup = toggleGroup;
 window.selectFamily = selectFamily;
+window.selectTopicFamily = selectTopicFamily;
+window.selectFreqFamily = selectFreqFamily;
 window.toggleRare = toggleRare;
 window.toggleImages = toggleImages;
 window.toggleFavorite = toggleFavorite;
