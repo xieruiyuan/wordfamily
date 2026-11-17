@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.17.17";
+const APP_VERSION = "2026.11.17.18";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -393,7 +393,7 @@ function buildSearchIndex() {
   searchIndexMap.clear();
   for (const fam of allFamilies) {
     const parts = [fam.headword];
-    for (const b of fam.pos_branches) {
+    for (const b of (sidebarMode === 'topic' ? [...fam.pos_branches].sort((a, b) => (a.pos === 'n.' ? -1 : b.pos === 'n.' ? 1 : 0)) : fam.pos_branches)) {
       for (const l of b.lemmas) {
         parts.push(l.lemma);
         if (l.def_zh) parts.push(l.def_zh);
