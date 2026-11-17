@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>法语词族、动词变位与性数配合词典</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b;
+    --core-bg: #dbeafe; --core-text: #1d4ed8;
+    --common-bg: #dcfce7; --common-text: #15803d;
+    --rare-bg: #f1f5f9; --rare-text: #64748b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0; background: var(--bg); color: var(--text);
+    display: flex; height: 100vh; height: 100dvh; overflow: hidden;
+  }
+
+  /* 移动端顶部吸顶导航栏 */
+  .mobile-topbar {
+    display: none;
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .mobile-menu-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #2563eb; color: #fff; border: none; border-radius: 7px;
+    padding: 7px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  }
+  .mobile-nav-group { display: flex; align-items: center; gap: 6px; }
+  .mobile-nav-btn {
+    background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155;
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+
+  .drawer-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+    z-index: 40;
+  }
+  .drawer-backdrop.open { display: block; }
+
+  /* 左侧边栏 */
+  .sidebar {
+    width: 345px; border-right: 1px solid var(--border); background: var(--card);
+    display: flex; flex-direction: column; flex-shrink: 0; height: 100%;
+  }
+  .status-bar {
+    padding: 10px 14px; background: #eff6ff; font-size: 12px;
+    border-bottom: 1px solid var(--border); display: flex;
+    justify-content: space-between; align-items: center; color: #1e40af; gap: 8px;
+  }
+  .status-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .fallback-btn {
+    font-size: 11px; color: #2563eb; background: #fff; border: 1px solid #bfdbfe;
+    border-radius: 4px; padding: 3px 8px; cursor: pointer;
+  }
+  .fallback-btn:hover { background: #dbeafe; }
+  .mobile-close-btn {
+    display: none; font-size: 12px; font-weight: 700; color: #475569;
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 9px; cursor: pointer;
+  }
+
+  .search-box { padding: 10px 14px 8px 14px; }
+  .search-box input {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 16px; outline: none; transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: #3b82f6; }
+
+  .pos-filter-bar {
+    padding: 0 14px 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .pos-chip {
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px;
+    border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .pos-chip:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .pos-chip.active { background: #2563eb; border-color: #2563eb; color: #ffffff; }
+
+  .family-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom); }
+  
+  .freq-group { border-bottom: 1px solid var(--border); }
+  .freq-group-header {
+    padding: 12px 14px; background: #eef2f6; font-size: 13px; font-weight: 700; color: #1e293b;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;
+    position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #cbd5e1;
+  }
+  .freq-group-header:hover { background: #e2e8f0; }
+  .freq-group.collapsed .freq-group-body { display: none; }
+
+  .sub-group { border-bottom: 1px solid #f1f5f9; }
+  .sub-group-header {
+    padding: 9px 14px 9px 22px; background: #f8fafc; font-size: 12.5px; font-weight: 600; color: #475569;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;
+    position: sticky; top: 41px; z-index: 5; border-bottom: 1px solid #f1f5f9;
+  }
+  .sub-group.collapsed .sub-group-body { display: none; }
+
+  .arrow-icon { font-size: 10px; color: #64748b; transition: transform 0.18s; display: inline-block; margin-right: 6px; width: 10px; }
+  .freq-group.collapsed > .freq-group-header .arrow-icon,
+  .sub-group.collapsed > .sub-group-header .arrow-icon { transform: rotate(-90deg); }
+
+  .group-count { font-size: 11px; font-weight: 700; color: #1e40af; background: #dbeafe; padding: 2px 8px; border-radius: 10px; border: 1px solid #bfdbfe; flex-shrink: 0; }
+  .sub-count { font-size: 10.5px; font-weight: 600; color: #475569; background: #fff; padding: 1px 7px; border-radius: 8px; border: 1px solid #cbd5e1; flex-shrink: 0; }
+
+  .family-item {
+    padding: 10px 14px 10px 34px; border-bottom: 1px solid #f8fafc; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; font-size: 14px;
+  }
+  .family-item:hover { background: #f1f5f9; }
+  .family-item.active { background: #eff6ff; color: #1d4ed8; font-weight: 700; border-left: 3px solid #2563eb; padding-left: 31px; }
+  .family-meta { display: flex; align-items: center; gap: 6px; }
+  .mini-pos { font-size: 10.5px; color: #64748b; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
+  .family-rank { font-size: 11.5px; color: #94a3b8; font-weight: 400; }
+
+  /* 右侧主视图 */
+  .main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; }
+  .main {
+    flex: 1; padding: 24px 36px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  }
+  .toolbar { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .header-title { font-size: 30px; font-weight: 800; color: #0f172a; word-break: break-word; }
+  
+  .phonetic-tag {
+    font-family: "Lucida Sans Unicode", "DejaVu Sans", -apple-system, sans-serif;
+    font-size: 15px; color: #475569; background: #f1f5f9; padding: 3px 9px;
+    border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.15s;
+  }
+  .phonetic-tag:hover { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+
+  .phonetic-sm {
+    font-family: "Lucida Sans Unicode", "DejaVu Sans", -apple-system, sans-serif;
+    font-size: 13.5px; color: #64748b; cursor: pointer; padding: 1px 5px; border-radius: 4px; transition: all 0.15s;
+  }
+  .phonetic-sm:hover { background: #eff6ff; color: #1d4ed8; }
+
+  .tts-btn {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 4px 9px; font-size: 12px; font-weight: 600; color: #334155;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .tts-btn:hover { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
+  .tts-btn.speaking { background: #dbeafe; border-color: #2563eb; color: #1d4ed8; }
+
+  .voice-status {
+    font-size: 11.5px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0;
+    padding: 3px 8px; border-radius: 5px;
+  }
+
+  .guide-box {
+    background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7;
+    border-radius: 8px; padding: 12px 15px; margin-bottom: 16px; font-size: 14px; line-height: 1.65; color: #0f172a;
+  }
+  .guide-distinction { margin-top: 6px; color: #0369a1; }
+
+  .pos-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .pos-header { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  
+  /* 法语词性徽章 */
+  .pos-badge { padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+  .pos-n { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .pos-v { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .pos-adj { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+  .pos-adv { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+  .pos-prep { background: #ccfbf1; color: #115e59; border: 1px solid #99f6e4; }
+  .pos-conj { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
+  .pos-pron { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .pos-det { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+  .pos-other { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+
+  /* 法语语法专属徽章：阴阳性、助动词、动词组别 */
+  .gender-badge { font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+  .gender-m { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+  .gender-f { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+  .gender-mf { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+  .aux-badge { font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+  .aux-avoir { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .aux-etre { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+  .group-badge { font-size: 11.5px; color: #475569; background: #fff; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 5px; }
+
+  .lemma-card { border-left: 3px solid #cbd5e1; padding: 12px 14px; margin-bottom: 12px; background: #fafafa; border-radius: 0 8px 8px 0; }
+  .lemma-card.tier-core { border-left-color: #2563eb; background: #f8faff; }
+  .lemma-card.tier-rare { opacity: 0.8; }
+  .hide-rare .tier-rare { display: none; }
+  
+  .lemma-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; flex-wrap: wrap; }
+  .lemma-word { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .tag { font-size: 11px; padding: 2px 7px; border-radius: 12px; font-weight: 600; }
+  .tag-core { background: var(--core-bg); color: var(--core-text); }
+  .tag-common { background: var(--common-bg); color: var(--common-text); }
+  .tag-rare { background: var(--rare-bg); color: var(--rare-text); }
+  
+  .lemma-def { font-size: 14px; color: #334155; margin: 4px 0 8px 0; line-height: 1.55; }
+  .def-zh { font-weight: 600; color: #0f172a; }
+  .def-fr { color: #64748b; margin-left: 6px; font-style: italic; }
+  
+  .lemma-usage {
+    background: #fffbeb; border: 1px solid #fde68a; border-left: 3px solid #f59e0b;
+    color: #78350f; font-size: 13px; line-height: 1.55; padding: 6px 10px;
+    border-radius: 0 6px 6px 0; margin: 6px 0 8px 0;
+  }
+  .lemma-examples { background: #ffffff; border-left: 2px solid #94a3b8; padding: 7px 11px; margin: 6px 0 10px 0; font-size: 13.5px; border-radius: 0 6px 6px 0; }
+  .example-item { margin-bottom: 6px; line-height: 1.5; }
+  .example-item:last-child { margin-bottom: 0; }
+  .ex-fr { color: #1e293b; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ex-zh { color: #64748b; font-size: 12.5px; padding-left: 12px; }
+  .mini-speak { cursor: pointer; font-size: 12px; opacity: 0.75; }
+  .mini-speak:hover { opacity: 1; }
+
+  /* 性数配合 & 基础词形槽位 */
+  .inflection-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+  .slot-pill { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+  .slot-pill.agreement-m { border-left: 3px solid #0284c7; }
+  .slot-pill.agreement-f { border-left: 3px solid #db2777; }
+  .slot-label { color: #64748b; font-size: 11.5px; }
+  .word-click { cursor: pointer; border-bottom: 1px dashed transparent; transition: all 0.15s; }
+  .word-click:hover { color: #2563eb; border-bottom-color: #2563eb; }
+
+  /* 法语动词变位矩阵面板 */
+  .conj-box {
+    margin-top: 10px; background: #ffffff; border: 1px solid #cbd5e1;
+    border-radius: 8px; overflow: hidden;
+  }
+  .conj-header {
+    background: #f1f5f9; padding: 7px 12px; display: flex;
+    justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .conj-title { font-size: 12.5px; font-weight: 700; color: #334155; }
+  .tense-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tense-tab {
+    font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 5px;
+    border: 1px solid #cbd5e1; background: #fff; color: #475569; cursor: pointer;
+  }
+  .tense-tab:hover { background: #eff6ff; color: #1d4ed8; }
+  .tense-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .conj-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px;
+    padding: 10px 14px; font-size: 13.5px;
+  }
+  .conj-cell {
+    display: flex; align-items: center; gap: 6px; padding: 3px 6px;
+    border-radius: 5px; cursor: pointer; transition: background 0.12s;
+  }
+  .conj-cell:hover { background: #eff6ff; }
+  .conj-pron { color: #64748b; font-size: 12.5px; min-width: 68px; }
+  .conj-form { font-weight: 700; color: #0f172a; }
+
+  @media (max-width: 768px) {
+    .mobile-topbar { display: flex; }
+    .mobile-close-btn { display: inline-block; }
+    .voice-status { display: none; }
+    .conj-grid { grid-template-columns: 1fr; }
+
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 88vw; max-width: 360px;
+      z-index: 50;
+      transform: translateX(-105%);
+      transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 4px 0 24px rgba(15, 23, 42, 0.18);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .main { padding: 14px 14px calc(32px + env(safe-area-inset-bottom)) 14px; }
+    .header-title { font-size: 26px; }
+    .toolbar { gap: 10px; margin-bottom: 12px; padding-bottom: 12px; }
+    .toolbar-right { width: 100%; justify-content: space-between; margin-left: 0 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeMobileDrawer()"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="status-bar">
+    <span id="loadStatus">正在加载法语词库...</span>
+    <div class="status-actions">
+      <label class="fallback-btn" title="导入本地法语 JSON 词库">
+        本地文件
+        <input type="file" id="jsonFile" accept=".json" style="display:none;">
+      </label>
+      <button class="mobile-close-btn" onclick="closeMobileDrawer()">✕ 关闭</button>
+    </div>
+  </div>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="搜索法语词头、变位、阴阳性或中文释义...">
+  </div>
+  <div class="pos-filter-bar" id="posFilterBar">
+    <button class="pos-chip active" data-pos="ALL" onclick="setPosFilter('ALL')">全部</button>
+    <button class="pos-chip" data-pos="v." onclick="setPosFilter('v.')">动词 v.</button>
+    <button class="pos-chip" data-pos="n." onclick="setPosFilter('n.')">名词 n.</button>
+    <button class="pos-chip" data-pos="adj." onclick="setPosFilter('adj.')">形容词 adj.</button>
+    <button class="pos-chip" data-pos="adv." onclick="setPosFilter('adv.')">副词 adv.</button>
+    <button class="pos-chip" data-pos="OTHER" onclick="setPosFilter('OTHER')">虚词/其他</button>
+  </div>
+  <div class="family-list" id="familyList"></div>
+</div>
+
+<div class="main-wrapper">
+  <div class="mobile-topbar">
+    <button class="mobile-menu-btn" onclick="openMobileDrawer()">☰ 词库 / 筛选</button>
+    <span id="mobileCurrentWord" style="font-weight:700; font-size:15px; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+    <div class="mobile-nav-group">
+      <button class="mobile-nav-btn" onclick="stepFamily(-1)">‹ 上一词</button>
+      <button class="mobile-nav-btn" onclick="stepFamily(1)">下一词 ›</button>
+    </div>
+  </div>
+
+  <div class="main" id="mainView"></div>
+</div>
+
+<script>
+const DATA_URL = './french_word_families.json';
+
+// 内置法语核心高频词族样本（覆盖不规则动词、性数配合形容词、阴阳性名词与派生词）
+const SAMPLE_FRENCH_DATA = [
+  {
+    rank: 1, headword: "être", primary_pos: "v.", phonetic: "ɛtʁ",
+    family_guide: {
+      root_logic: "源自拉丁语 *essere（存在、是），词形融合了多个异干词根（suis / es / est / sommes / êtes / sont），构成法语最核心的系动词与复合时态助动词。",
+      core_distinction: "作助动词时，用于所有代动词（se lever 等）以及 14 个表示位置移动或状态变化的动词（aller, venir, naître, mourir 等），且过去分词须与主语进行性数配合。"
+    },
+    pos_branches: [
+      {
+        pos: "v.",
+        lemmas: [
+          {
+            lemma: "être", tier: "core", zipf: 7.45, phonetic: "ɛtʁ",
+            aux: "avoir", group: "第3组 (不规则)",
+            def_zh: "是；存在；位于；[助]（构成被动语态及部分复合时态）",
+            def_fr: "exister, avoir une qualité ou un état ; auxiliaire des temps composés",
+            usage_note: "注意：être 自身的复合过去时用 avoir 作助动词（j'ai été），且过去分词 été 永远不变。",
+            examples: [
+              { fr: "Elle est ravie de pouvoir participer à ce projet.", zh: "她很高兴能够参与这个项目。" },
+              { fr: "Nous sommes arrivés à Montréal hier soir.", zh: "我们昨晚抵达了蒙特利尔。（aller/arriver 类动词用 être 作助动词，过去分词配合复数 -s）" }
+            ],
+            inflections: {
+              base: ["être"],
+              past_participle: ["été"],
+              pres_participle: ["étant"]
+            },
+            conjugations: {
+              present: ["suis", "es", "est", "sommes", "êtes", "sont"],
+              imparfait: ["étais", "étais", "était", "étions", "étiez", "étaient"],
+              futur: ["serai", "seras", "sera", "serons", "serez", "seront"],
+              conditionnel: ["serais", "serais", "serait", "serions", "seriez", "seraient"],
+              subjonctif: ["sois", "sois", "soit", "soyons", "soyez", "soient"],
+              imperatif: ["—", "sois", "—", "soyons", "soyez", "—"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "n.",
+        lemmas: [
+          {
+            lemma: "être", tier: "common", zipf: 5.12, phonetic: "ɛtʁ", gender: "m.",
+            def_zh: "存在；生物，人（如 un être humain 人类）",
+            def_fr: "ce qui existe ; créature vivante, personne",
+            examples: [
+              { fr: "Chaque être humain a droit au respect et à la dignité.", zh: "每一个人都享有受尊重和尊严的权利。" }
+            ],
+            inflections: { m_sg: ["un être"], m_pl: ["des êtres"] }
+          },
+          {
+            lemma: "bien-être", tier: "common", zipf: 4.35, phonetic: "bjɛ̃nɛtʁ", gender: "m.",
+            def_zh: "幸福，安康，舒适；身心健康",
+            def_fr: "état agréable résultant de la satisfaction des besoins du corps et du calme de l'esprit",
+            examples: [
+              { fr: "Le sport régulier contribue grandement au bien-être physique et mental.", zh: "规律运动极大地促进身心健康。" }
+            ],
+            inflections: { m_sg: ["le bien-être"], m_pl: ["des bien-êtres (罕用)"] }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    rank: 2, headword: "avoir", primary_pos: "v.", phonetic: "avwaʁ",
+    family_guide: {
+      root_logic: "源自拉丁语 habēre（持有、拥有），演变出法语表达领属关系与构成绝大多数动词复合时态的核心助动词。",
+      core_distinction: "用 avoir 作助动词的复合过去时中，过去分词通常不变；仅当直接宾语提前（如代词 le/la/les 或关系代词 que）时，过去分词需与提前的直宾进行性数配合。"
+    },
+    pos_branches: [
+      {
+        pos: "v.",
+        lemmas: [
+          {
+            lemma: "avoir", tier: "core", zipf: 7.38, phonetic: "avwaʁ",
+            aux: "avoir", group: "第3组 (不规则)",
+            def_zh: "有，拥有；获得；年龄为……；[助]（构成复合时态）",
+            def_fr: "posséder, détenir ; auxiliaire servant à former les temps composés",
+            usage_note: "高频无人称结构 il y a（有…… / 在……之前），如 il y a trois ans（三年前）。",
+            examples: [
+              { fr: "J'ai obtenu mon diplôme d'ingénieur il y a quelques années.", zh: "我几年前获得了工程师学位。" },
+              { fr: "Les décisions qu'ils ont prises sont tout à fait justifiées.", zh: "他们做出的决定完全合情合理。（直宾 que 指代阴性复数 décisions 提前，prise 加 -s）" }
+            ],
+            inflections: {
+              base: ["avoir"],
+              past_participle: ["eu", "eue", "eus", "eues"],
+              pres_participle: ["ayant"]
+            },
+            conjugations: {
+              present: ["ai", "as", "a", "avons", "avez", "ont"],
+              imparfait: ["avais", "avais", "avait", "avions", "aviez", "avaient"],
+              futur: ["aurai", "auras", "aura", "aurons", "aurez", "auront"],
+              conditionnel: ["aurais", "aurais", "aurait", "aurions", "auriez", "auraient"],
+              subjonctif: ["aie", "aies", "ait", "ayons", "ayez", "aient"],
+              imperatif: ["—", "aie", "—", "ayons", "ayez", "—"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "n.",
+        lemmas: [
+          {
+            lemma: "avoir", tier: "common", zipf: 4.10, phonetic: "avwaʁ", gender: "m.",
+            def_zh: "财产，资产；[商] 贷方，退款凭证",
+            def_fr: "ensemble des biens possédés ; crédit accordé par un commerçant",
+            examples: [
+              { fr: "Le magasin m'a remis un avoir valable pendant six mois.", zh: "商店给了我一张六个月内有效的退款抵用券。" }
+            ],
+            inflections: { m_sg: ["un avoir"], m_pl: ["des avoirs"] }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    rank: 14, headword: "faire", primary_pos: "v.", phonetic: "fɛʁ",
+    family_guide: {
+      root_logic: "源自拉丁语 facere（制作、行动、执行），词根派生力极强（如 fait 事实、défaire 拆开、refaire 重做、faisable 可行的）。",
+      core_distinction: "faire + 不定式构成使役结构（faire réparer la voiture 让人修车）；作天气无人称动词（il fait beau / froid）。"
+    },
+    pos_branches: [
+      {
+        pos: "v.",
+        lemmas: [
+          {
+            lemma: "faire", tier: "core", zipf: 6.52, phonetic: "fɛʁ",
+            aux: "avoir", group: "第3组 (不规则)",
+            def_zh: "做，干；制造，制作；从事（运动/职业）；使，让",
+            def_fr: "réaliser une action, fabriquer, pratiquer, causer",
+            usage_note: "注意直陈式现在时第二人称复数 vous faites（不规则，非 *faisez）以及第三人称复数 ils font。",
+            examples: [
+              { fr: "Il fait du judo deux fois par semaine pour garder la forme.", zh: "他每周练两次柔道以保持体能。" },
+              { fr: "Ce changement a fait évoluer toute la stratégie de l'équipe.", zh: "这一变化促使整个团队的策略发生了演变。" }
+            ],
+            inflections: {
+              base: ["faire"],
+              past_participle: ["fait", "faite", "faits", "faites"],
+              pres_participle: ["faisant"]
+            },
+            conjugations: {
+              present: ["fais", "fais", "fait", "faisons", "faites", "font"],
+              imparfait: ["faisais", "faisais", "faisait", "faisions", "faisiez", "faisaient"],
+              futur: ["ferai", "feras", "fera", "ferons", "ferez", "feront"],
+              conditionnel: ["ferais", "ferais", "ferait", "ferions", "feriez", "feraient"],
+              subjonctif: ["fasse", "fasses", "fasse", "fassions", "fassiez", "fassent"],
+              imperatif: ["—", "fais", "—", "faisons", "faites", "—"]
+            }
+          },
+          {
+            lemma: "refaire", tier: "common", zipf: 4.41, phonetic: "ʁəfɛʁ",
+            aux: "avoir", group: "第3组 (同 faire)",
+            def_zh: "重做，重新制作；修复",
+            def_fr: "faire de nouveau, remettre en état",
+            examples: [
+              { fr: "Nous devons refaire les calculs pour vérifier les résultats.", zh: "我们必须重新计算以核实结果。" }
+            ],
+            inflections: {
+              base: ["refaire"],
+              past_participle: ["refait", "refaite", "refaits", "refaites"],
+              pres_participle: ["refaisant"]
+            },
+            conjugations: {
+              present: ["refais", "refais", "refait", "refaisons", "refaites", "refont"],
+              imparfait: ["refaisais", "refaisais", "refaisait", "refaisions", "refaisiez", "refaisaient"],
+              futur: ["referai", "referas", "refera", "referons", "referez", "referont"],
+              conditionnel: ["referais", "referais", "referait", "referions", "referiez", "referaient"],
+              subjonctif: ["refasse", "refasses", "refasse", "refassions", "refassiez", "refassent"],
+              imperatif: ["—", "refais", "—", "refaisons", "refaites", "—"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "adj.",
+        lemmas: [
+          {
+            lemma: "faisable", tier: "common", zipf: 3.75, phonetic: "fəzabl",
+            def_zh: "可行的，办得到的",
+            def_fr: "qui peut être fait, réalisable",
+            examples: [
+              { fr: "Ce calendrier est ambitieux, mais tout à fait faisable.", zh: "这个时间表很有雄心，但完全可行。" }
+            ],
+            inflections: {
+              m_sg: ["faisable"],
+              f_sg: ["faisable (阴阳性同形)"],
+              m_pl: ["faisables"],
+              f_pl: ["faisables"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "n.",
+        lemmas: [
+          {
+            lemma: "fait", tier: "core", zipf: 5.89, phonetic: "fɛ", gender: "m.",
+            def_zh: "事实，事件；行为（常用短语 en fait 事实上）",
+            def_fr: "ce qui est arrivé, ce qui existe réellement",
+            examples: [
+              { fr: "En fait, la réunion a été reportée à vendredi matin.", zh: "事实上，会议已被推迟到周五上午。" }
+            ],
+            inflections: { m_sg: ["un fait"], m_pl: ["des faits"] }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    rank: 22, headword: "aller", primary_pos: "v.", phonetic: "ale",
+    family_guide: {
+      root_logic: "由拉丁语三个不同动词词根合并演变（vais/vas/va 源自 vadere；allons/allez 源自 ambulare；irai 源自 ire），是法语第一组词尾中唯一彻底不规则的动词。",
+      core_distinction: "aller + 动词不定式构成最近将来时（futur proche，如 Je vais partir 我马上要走了）；复合过去时必须用 être 作助动词。"
+    },
+    pos_branches: [
+      {
+        pos: "v.",
+        lemmas: [
+          {
+            lemma: "aller", tier: "core", zipf: 6.35, phonetic: "ale",
+            aux: "être", group: "第3组 (虽以-er结尾)",
+            def_zh: "去，前往；进展，健康状况（Comment allez-vous ?）；[助]将要",
+            def_fr: "se déplacer vers un lieu ; se porter ; semi-auxiliaire du futur proche",
+            usage_note: "注意第二人称单数命令式 va 不带 -s（Va !），但在代词 y 前为发音连诵恢复 -s（Vas-y !）。",
+            examples: [
+              { fr: "Elles sont allées à la bibliothèque pour préparer leur examen.", zh: "她们去图书馆准备考试了。（助动词 être + 阴性复数配合 allées）" },
+              { fr: "Tout va bien se passer si nous restons concentrés.", zh: "只要我们保持专注，一切都会顺利进行的。" }
+            ],
+            inflections: {
+              base: ["aller"],
+              past_participle: ["allé", "allée", "allés", "allées"],
+              pres_participle: ["allant"]
+            },
+            conjugations: {
+              present: ["vais", "vas", "va", "allons", "allez", "vont"],
+              imparfait: ["allais", "allais", "allait", "allions", "alliez", "allaient"],
+              futur: ["irai", "iras", "ira", "irons", "irez", "iront"],
+              conditionnel: ["irais", "irais", "irait", "irions", "iriez", "iraient"],
+              subjonctif: ["aille", "ailles", "aille", "allions", "alliez", "aillent"],
+              imperatif: ["—", "va (vas-y)", "—", "allons", "allez", "—"]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    rank: 35, headword: "bon", primary_pos: "adj.", phonetic: "bɔ̃",
+    family_guide: {
+      root_logic: "源自拉丁语 bonus（好的、优良的），不规则比较级为 meilleur（更好的），不规则最高级为 le/la/les meilleur(e)(s)（最好的）。",
+      core_distinction: "注意区分形容词 bon（修饰名词，表品质好）与副词 bien（修饰动词或形容词，表动作做得好或程度深）；bon 阳性单数变阴性时双写 n（bonne），鼻化元音 /ɔ̃/ 变为口腔元音 /ɔn/。"
+    },
+    pos_branches: [
+      {
+        pos: "adj.",
+        lemmas: [
+          {
+            lemma: "bon", tier: "core", zipf: 6.12, phonetic: "bɔ̃",
+            def_zh: "好的，优良的；美味的；善良的；正确的",
+            def_fr: "qui a des qualités positives, agréable, juste",
+            usage_note: "短小高频形容词，通常置于名词之前（un bon livre, une bonne idée）。",
+            examples: [
+              { fr: "C'est une très bonne occasion d'améliorer ton niveau de français.", zh: "这是提高你法语水平的一个极好机会。" },
+              { fr: "Ces pommes sont vraiment bonnes et croquantes.", zh: "这些苹果确实又好吃又脆。" }
+            ],
+            inflections: {
+              m_sg: ["bon"],
+              f_sg: ["bonne"],
+              m_pl: ["bons"],
+              f_pl: ["bonnes"],
+              comparative: ["meilleur", "meilleure", "meilleurs", "meilleures"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "n.",
+        lemmas: [
+          {
+            lemma: "bonheur", tier: "common", zipf: 4.88, phonetic: "bɔnœʁ", gender: "m.",
+            def_zh: "幸福，快乐；好运",
+            def_fr: "état de complète satisfaction ; chance",
+            examples: [
+              { fr: "Ils ont eu le bonheur de voyager ensemble pendant tout l'été.", zh: "他们整个夏天都有幸一起旅行。" }
+            ],
+            inflections: { m_sg: ["le bonheur"], m_pl: ["des bonheurs"] }
+          },
+          {
+            lemma: "bonté", tier: "rare", zipf: 3.42, phonetic: "bɔ̃te", gender: "f.",
+            def_zh: "善良，仁慈；好意",
+            def_fr: "qualité morale qui porte à faire le bien",
+            examples: [
+              { fr: "Ayez la bonté de me prévenir dès votre arrivée.", zh: "劳驾您一到就通知我一声。" }
+            ],
+            inflections: { f_sg: ["la bonté"], f_pl: ["des bontés"] }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    rank: 48, headword: "prendre", primary_pos: "v.", phonetic: "pʁɑ̃dʁ",
+    family_guide: {
+      root_logic: "源自拉丁语 prehendere（抓住、夺取），同根派生出 comprendre（理解）、apprendre（学习/告知）、surprendre（使惊讶）和 reprendre（重新拿起/恢复），变位模式完全一致。",
+      core_distinction: "复数人称（nous prenons, vous prenez, ils prennent）词干去掉 d，第三人称复数双写 n（prennent）；过去分词以 -is 结尾（pris）。"
+    },
+    pos_branches: [
+      {
+        pos: "v.",
+        lemmas: [
+          {
+            lemma: "prendre", tier: "core", zipf: 5.95, phonetic: "pʁɑ̃dʁ",
+            aux: "avoir", group: "第3组 (不规则)",
+            def_zh: "拿，取；乘坐（交通工具）；吃，喝；采取（措施/决定）",
+            def_fr: "saisir avec la main ; emprunter un moyen de transport ; consommer",
+            examples: [
+              { fr: "Je prends le métro tous les matins pour aller au travail.", zh: "我每天早上乘地铁去上班。" },
+              { fr: "Prenez le temps de bien relire votre contrat avant de signer.", zh: "签字前请花时间仔细重读一遍合同。" }
+            ],
+            inflections: {
+              base: ["prendre"],
+              past_participle: ["pris", "prise", "pris", "prises"],
+              pres_participle: ["prenant"]
+            },
+            conjugations: {
+              present: ["prends", "prends", "prend", "prenons", "prenez", "prennent"],
+              imparfait: ["prenais", "prenais", "prenait", "prenions", "preniez", "prenaient"],
+              futur: ["prendrai", "prendras", "prendra", "prendrons", "prendrez", "prendront"],
+              conditionnel: ["prendrais", "prendrais", "prendrait", "prendrions", "prendriez", "prendraient"],
+              subjonctif: ["prenne", "prennes", "prenne", "prenions", "preniez", "prennent"],
+              imperatif: ["—", "prends", "—", "prenons", "prenez", "—"]
+            }
+          },
+          {
+            lemma: "comprendre", tier: "core", zipf: 5.62, phonetic: "kɔ̃pʁɑ̃dʁ",
+            aux: "avoir", group: "第3组 (同 prendre)",
+            def_zh: "理解，明白；包含，包括",
+            def_fr: "saisir par l'esprit ; inclure en soi",
+            examples: [
+              { fr: "Je comprends parfaitement les raisons de votre décision.", zh: "我完全理解您做此决定的原因。" }
+            ],
+            inflections: {
+              base: ["comprendre"],
+              past_participle: ["compris", "comprise", "compris", "comprises"],
+              pres_participle: ["comprenant"]
+            },
+            conjugations: {
+              present: ["comprends", "comprends", "comprend", "comprenons", "comprenez", "comprennent"],
+              imparfait: ["comprenais", "comprenais", "comprenait", "comprenions", "compreniez", "comprenaient"],
+              futur: ["comprendrai", "comprendras", "comprendra", "comprendrons", "comprendrez", "comprendront"],
+              conditionnel: ["comprendrais", "comprendrais", "comprendrait", "comprendrions", "comprendriez", "comprendraient"],
+              subjonctif: ["comprenne", "comprennes", "comprenne", "comprenions", "compreniez", "comprennent"],
+              imperatif: ["—", "comprends", "—", "comprenons", "comprenez", "—"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "n.",
+        lemmas: [
+          {
+            lemma: "prise", tier: "common", zipf: 4.55, phonetic: "pʁiz", gender: "f.",
+            def_zh: "抓取，抓握（柔道/摔跤把位）；插座；服用（药物）；占领",
+            def_fr: "action de saisir ; endroit par où l'on saisit ; dispositif électrique",
+            examples: [
+              { fr: "En judo, le contrôle de la prise au revers est fondamental.", zh: "在柔道中，对衣领把位（kumi-kata）的控制至关重要。" }
+            ],
+            inflections: { f_sg: ["une prise"], f_pl: ["des prises"] }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    rank: 63, headword: "nouveau", primary_pos: "adj.", phonetic: "nuvo",
+    family_guide: {
+      root_logic: "源自拉丁语 novellus（新的），与英语 novel / new 同源。",
+      core_distinction: "典型特殊性数变化形容词：阳性单数在辅音前为 nouveau，在元音或哑音 h 开头的阳性单数名词前必须变为 nouvel（如 un nouvel appartement, un nouvel ami），阴性单数为 nouvelle。"
+    },
+    pos_branches: [
+      {
+        pos: "adj.",
+        lemmas: [
+          {
+            lemma: "nouveau", tier: "core", zipf: 5.88, phonetic: "nuvo",
+            def_zh: "新的，新近的；另一个的，重新开始的",
+            def_fr: "qui existe depuis peu de temps, récent, inédit",
+            usage_note: "注意位置语义差异：放在名词前常表“新换的/另一个”（un nouveau livre 一本新买的书）；放在名词后常表“新近问世的/新颖的”（un livre nouveau 一本内容新颖的书）。",
+            examples: [
+              { fr: "Ils viennent d'emménager dans un nouvel appartement au centre-ville.", zh: "他们刚搬进市中心的一套新公寓。（appartement 为阳性元音开头，用 nouvel）" },
+              { fr: "Cette nouvelle méthode d'apprentissage est très efficace.", zh: "这种新的学习方法非常有效。" }
+            ],
+            inflections: {
+              m_sg: ["nouveau"],
+              m_sg_vowel: ["nouvel (元音/哑音h前)"],
+              f_sg: ["nouvelle"],
+              m_pl: ["nouveaux"],
+              f_pl: ["nouvelles"]
+            }
+          }
+        ]
+      },
+      {
+        pos: "n.",
+        lemmas: [
+          {
+            lemma: "nouvelle", tier: "core", zipf: 5.42, phonetic: "nuvɛl", gender: "f.",
+            def_zh: "消息，新闻；短篇小说",
+            def_fr: "information récente ; récit littéraire court",
+            examples: [
+              { fr: "As-tu reçu de bonnes nouvelles de ta famille ?", zh: "你收到家里的好消息了吗？" }
+            ],
+            inflections: { f_sg: ["une nouvelle"], f_pl: ["des nouvelles"] }
+          },
+          {
+            lemma: "nouveauté", tier: "common", zipf: 4.18, phonetic: "nuvote", gender: "f.",
+            def_zh: "新奇，新颖；新产品，新书",
+            def_fr: "caractère de ce qui est nouveau ; produit récemment paru",
+            examples: [
+              { fr: "La librairie expose toutes les nouveautés littéraires à l'entrée.", zh: "书店在入口处陈列了所有新出版的文学作品。" }
+            ],
+            inflections: { f_sg: ["une nouveauté"], f_pl: ["des nouveautés"] }
+          }
+        ]
+      },
+      {
+        pos: "adv.",
+        lemmas: [
+          {
+            lemma: "nouvellement", tier: "rare", zipf: 2.95, phonetic: "nuvɛlmɑ̃",
+            def_zh: "新近地，刚刚",
+            def_fr: "récemment, depuis peu",
+            examples: [
+              { fr: "Les employés nouvellement recrutés suivent une formation d'une semaine.", zh: "新招聘的员工要参加为期一周的培训。" }
+            ],
+            inflections: { base: ["nouvellement"] }
+          }
+        ]
+      }
+    ]
+  }
+];
+
+let allFamilies = [];
+let currentFilteredList = [];
+let activeRank = null;
+let hideRare = false;
+let currentVoiceName = "默认法语语音";
+let selectedPos = "ALL";
+let baseStatusText = "";
+// 记录每个词条当前选中的时态选项卡
+const selectedTenseMap = new Map();
+
+function openMobileDrawer() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+}
+
+function closeMobileDrawer() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+
+function stepFamily(delta) {
+  const list = currentFilteredList.length ? currentFilteredList : allFamilies;
+  if (!list.length) return;
+  const idx = list.findIndex(f => f.rank === activeRank);
+  const nextIdx = idx === -1 ? 0 : Math.max(0, Math.min(list.length - 1, idx + delta));
+  selectFamily(list[nextIdx].rank, false);
+  document.getElementById('mainView').scrollTop = 0;
+}
+
+// 去除重音符号用于无障碍模糊搜索（例如搜 etre 也能匹配 être）
+function normalizeFrench(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function pickBestFrenchVoice(lang = 'fr-FR') {
+  const voices = window.speechSynthesis.getVoices();
+  const langVoices = voices.filter(v => v.lang.replace('_', '-').toLowerCase() === lang.toLowerCase());
+  const pool = langVoices.length ? langVoices : voices.filter(v => v.lang.toLowerCase().startsWith('fr'));
+
+  const scoreVoice = (v) => {
+    let s = 0;
+    if (/Premium|Enhanced|Natural|Neural|Siri/i.test(v.name)) s += 100;
+    if (/Google/i.test(v.name)) s += 60;
+    if (/Thomas|Amélie|Amelie|Audrey|Aurélie|Aurelie|Chantal|Nicolas|Marie/i.test(v.name)) s += 30;
+    if (v.localService) s += 10;
+    return s;
+  };
+
+  pool.sort((a, b) => scoreVoice(b) - scoreVoice(a));
+  return pool[0] || null;
+}
+
+function speakText(text, lang = 'fr-FR', btnEl = null) {
+  if (!('speechSynthesis' in window)) {
+    alert('当前浏览器不支持语音合成朗读。');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  utter.rate = 0.96;
+
+  const bestVoice = pickBestFrenchVoice(lang);
+  if (bestVoice) {
+    utter.voice = bestVoice;
+    currentVoiceName = bestVoice.name;
+    const badge = document.getElementById('voiceStatusBadge');
+    if (badge) badge.textContent = `当前语音: ${bestVoice.name}`;
+  }
+
+  if (btnEl) {
+    btnEl.classList.add('speaking');
+    utter.onend = () => btnEl.classList.remove('speaking');
+    utter.onerror = () => btnEl.classList.remove('speaking');
+  }
+  window.speechSynthesis.speak(utter);
+}
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    const v = pickBestFrenchVoice('fr-FR');
+    if (v) {
+      currentVoiceName = v.name;
+      const badge = document.getElementById('voiceStatusBadge');
+      if (badge) badge.textContent = `当前语音: ${v.name}`;
+    }
+  };
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/&/g, '&').replace(/'/g, "\\'").replace(/"/g, '"');
+}
+
+const FREQ_BANDS = [
+  { id: 'band-1', label: '超高频核心 (Top 1 – 1,000)', min: 1, max: 1000, defaultOpen: true },
+  { id: 'band-2', label: '高频常用 (1,001 – 3,000)', min: 1001, max: 3000, defaultOpen: false },
+  { id: 'band-3', label: '中频进阶 (3,001 – 6,000)', min: 3001, max: 6000, defaultOpen: false },
+  { id: 'band-4', label: '中高阶词汇 (6,001 – 10,000)', min: 6001, max: 10000, defaultOpen: false },
+  { id: 'band-5', label: '法语深度扩展 (10,001+)', min: 10001, max: 999999, defaultOpen: false }
+];
+
+const SUB_STEP = 200;
+const openState = new Map();
+openState.set('band-1', true);
+openState.set('sub-1-200', true);
+
+const POS_META = {
+  'n.': { cls: 'pos-n', name: '名词 Nom' },
+  'v.': { cls: 'pos-v', name: '动词 Verbe' },
+  'adj.': { cls: 'pos-adj', name: '形容词 Adjectif' },
+  'adv.': { cls: 'pos-adv', name: '副词 Adverbe' },
+  'prep.': { cls: 'pos-prep', name: '介词 Préposition' },
+  'conj.': { cls: 'pos-conj', name: '连词 Conjonction' },
+  'pron.': { cls: 'pos-pron', name: '代词 Pronom' },
+  'det.': { cls: 'pos-det', name: '限定词 Déterminant' }
+};
+
+function getPosBadgeHtml(pos, showFullName = false) {
+  const meta = POS_META[pos] || { cls: 'pos-other', name: pos };
+  const text = showFullName ? `${pos} (${meta.name})` : pos;
+  return `<span class="pos-badge ${meta.cls}">${text}</span>`;
+}
+
+// 法语专属形态槽位标签
+const SLOT_NAMES = {
+  base: '不定式 / 原形',
+  m_sg: '阳性单数 (m.sg.)',
+  m_sg_vowel: '阳性单数元音前',
+  f_sg: '阴性单数 (f.sg.)',
+  m_pl: '阳性复数 (m.pl.)',
+  f_pl: '阴性复数 (f.pl.)',
+  plural: '复数 (pl.)',
+  comparative: '比较级',
+  superlative: '最高级',
+  past_participle: '过去分词 (Participe passé)',
+  pres_participle: '现在分词 (Participe présent)'
+};
+
+const TENSE_LABELS = {
+  present: '直陈式现在时 (Présent)',
+  imparfait: '未完成过去时 (Imparfait)',
+  futur: '简单将来时 (Futur)',
+  conditionnel: '条件式 (Conditionnel)',
+  subjonctif: '虚拟式 (Subjonctif)',
+  imperatif: '命令式 (Impératif)'
+};
+
+const PRONOUNS = ["je / j'", "tu", "il / elle / on", "nous", "vous", "ils / elles"];
+
+function formatPronounForm(pronIdx, form, isSubjunctive = false) {
+  if (!form || form === '—') return `<span class="conj-pron">—</span><span class="conj-form" style="color:#94a3b8;">—</span>`;
+  const cleanWord = form.split('(')[0].trim();
+  const startsWithVowelOrH = /^[aeiouyàâäéèêëîïôöùûüÿhœæ]/i.test(cleanWord);
+  let pLabel = PRONOUNS[pronIdx];
+  let speakPhrase = '';
+
+  if (pronIdx === 0) {
+    pLabel = startsWithVowelOrH ? "j'" : "je";
+    speakPhrase = startsWithVowelOrH ? `j'${cleanWord}` : `je ${cleanWord}`;
+  } else if (pronIdx === 1) {
+    speakPhrase = `tu ${cleanWord}`;
+  } else if (pronIdx === 2) {
+    speakPhrase = `il ${cleanWord}`;
+  } else if (pronIdx === 3) {
+    speakPhrase = `nous ${cleanWord}`;
+  } else if (pronIdx === 4) {
+    speakPhrase = `vous ${cleanWord}`;
+  } else if (pronIdx === 5) {
+    speakPhrase = `ils ${cleanWord}`;
+  }
+
+  if (isSubjunctive) {
+    pLabel = (pronIdx === 0 && startsWithVowelOrH) ? "que j'" : (pronIdx === 2 || pronIdx === 5 ? `qu'${pLabel}` : `que ${pLabel}`);
+    speakPhrase = `${pLabel}${pLabel.endsWith("'") ? '' : ' '}${cleanWord}`;
+  }
+
+  return `
+    <span class="conj-pron">${pLabel}</span>
+    <span class="conj-form">${form}</span>
+  `;
+}
+
+function getSpeakableConjugation(pronIdx, form, tenseKey) {
+  if (!form || form === '—') return '';
+  const cleanWord = form.split('(')[0].trim();
+  if (tenseKey === 'imperatif') return cleanWord;
+  const startsWithVowelOrH = /^[aeiouyàâäéèêëîïôöùûüÿhœæ]/i.test(cleanWord);
+  const rawPron = ["je", "tu", "il", "nous", "vous", "ils"][pronIdx];
+  let phrase = (pronIdx === 0 && startsWithVowelOrH) ? `j'${cleanWord}` : `${rawPron} ${cleanWord}`;
+  if (tenseKey === 'subjonctif') {
+    phrase = (pronIdx === 0 && startsWithVowelOrH) ? `que j'${cleanWord}` : ((pronIdx === 2 || pronIdx === 5) ? `qu'${phrase}` : `que ${phrase}`);
+  }
+  return phrase;
+}
+
+function initData(data, sourceLabel = '已自动加载') {
+  allFamilies = data;
+  baseStatusText = `${sourceLabel} (${allFamilies.length.toLocaleString()} 词族)`;
+  applyFilters();
+  if (allFamilies.length > 0) selectFamily(allFamilies[0].rank, false);
+}
+
+function setPosFilter(pos) {
+  selectedPos = pos;
+  document.querySelectorAll('.pos-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.pos === pos);
+  });
+  applyFilters();
+}
+
+function matchesPos(fam) {
+  if (selectedPos === 'ALL') return true;
+  const p = fam.primary_pos;
+  if (selectedPos === 'OTHER') {
+    return !['v.', 'n.', 'adj.', 'adv.'].includes(p);
+  }
+  return p === selectedPos;
+}
+
+function applyFilters() {
+  const qRaw = document.getElementById('searchInput').value.trim();
+  const qNorm = normalizeFrench(qRaw);
+
+  const filtered = allFamilies.filter(f => {
+    if (!matchesPos(f)) return false;
+    if (!qNorm) return true;
+    if (normalizeFrench(f.headword).includes(qNorm)) return true;
+
+    return f.pos_branches.some(b => b.lemmas.some(l => {
+      if (normalizeFrench(l.lemma).includes(qNorm)) return true;
+      if (l.def_zh && l.def_zh.toLowerCase().includes(qRaw.toLowerCase())) return true;
+      if (l.def_fr && normalizeFrench(l.def_fr).includes(qNorm)) return true;
+      if (l.inflections && Object.values(l.inflections).flat().some(w => normalizeFrench(w).includes(qNorm))) return true;
+      if (l.conjugations && Object.values(l.conjugations).flat().some(w => normalizeFrench(w).includes(qNorm))) return true;
+      return false;
+    }));
+  });
+
+  currentFilteredList = filtered;
+
+  const statusEl = document.getElementById('loadStatus');
+  if (selectedPos === 'ALL' && !qRaw) {
+    statusEl.textContent = baseStatusText;
+  } else {
+    const posLabel = selectedPos === 'ALL' ? '全部词性' : (selectedPos === 'OTHER' ? '虚词/其他' : selectedPos);
+    statusEl.textContent = `筛选 [${posLabel}]: ${filtered.length.toLocaleString()} 词族`;
+  }
+
+  renderGroupedSidebar(filtered, Boolean(qRaw));
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const resp = await fetch(DATA_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    initData(data, '已加载法语词库');
+  } catch (err) {
+    // 若未挂载外部 JSON，平滑回退至内置法语核心示例词库
+    initData(SAMPLE_FRENCH_DATA, '内置法语演示库');
+  }
+});
+
+document.getElementById('jsonFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('loadStatus').textContent = '正在解析本地文件...';
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    initData(JSON.parse(evt.target.result), '已加载本地文件');
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+function toggleGroup(groupId) {
+  const el = document.getElementById(groupId);
+  if (!el) return;
+  const willCollapse = !el.classList.contains('collapsed');
+  el.classList.toggle('collapsed', willCollapse);
+  openState.set(groupId, !willCollapse);
+}
+
+function renderGroupedSidebar(list, forceExpandAll = false) {
+  const container = document.getElementById('familyList');
+  if (!list.length) {
+    container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;text-align:center;">当前筛选条件下无匹配词族</div>';
+    return;
+  }
+
+  let html = '';
+
+  FREQ_BANDS.forEach(band => {
+    const bandItems = list.filter(f => f.rank >= band.min && f.rank <= band.max);
+    if (bandItems.length === 0) return;
+
+    const isBandOpen = forceExpandAll ? true : (openState.has(band.id) ? openState.get(band.id) : band.defaultOpen);
+    const maxRankInBand = Math.min(band.max, bandItems[bandItems.length - 1].rank);
+    let subHtml = '';
+
+    const activeStep = (selectedPos === 'ALL') ? SUB_STEP : 1000;
+    for (let start = band.min; start <= maxRankInBand; start += activeStep) {
+      const end = Math.min(start + activeStep - 1, band.max);
+      const subItems = bandItems.filter(f => f.rank >= start && f.rank <= end);
+      if (subItems.length === 0) continue;
+
+      const subId = `sub-${start}-${end}`;
+      const isSubOpen = forceExpandAll ? true : (openState.get(subId) || false);
+
+      const itemsHtml = subItems.map(f => `
+        <div class="family-item ${f.rank === activeRank ? 'active' : ''}" data-rank="${f.rank}" onclick="selectFamily(${f.rank}, true)">
+          <span>${f.headword}</span>
+          <span class="family-meta">
+            ${selectedPos === 'ALL' ? `<span class="mini-pos">${f.primary_pos}</span>` : ''}
+            <span class="family-rank">#${f.rank}</span>
+          </span>
+        </div>
+      `).join('');
+
+      subHtml += `
+        <div class="sub-group ${isSubOpen ? '' : 'collapsed'}" id="${subId}">
+          <div class="sub-group-header" onclick="toggleGroup('${subId}')">
+            <span><span class="arrow-icon">▼</span>${start.toLocaleString()} – ${end.toLocaleString()}</span>
+            <span class="sub-count">${subItems.length} 词</span>
+          </div>
+          <div class="sub-group-body">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="freq-group ${isBandOpen ? '' : 'collapsed'}" id="${band.id}">
+        <div class="freq-group-header" onclick="toggleGroup('${band.id}')">
+          <span><span class="arrow-icon">▼</span>${band.label}</span>
+          <span class="group-count">${bandItems.length.toLocaleString()} 词</span>
+        </div>
+        <div class="freq-group-body">
+          ${subHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function selectFamily(rank, autoCloseMobile = true) {
+  activeRank = rank;
+  document.querySelectorAll('.family-item').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.rank) === rank);
+  });
+  const fam = allFamilies.find(f => f.rank === rank);
+  if (fam) {
+    renderFamilyDetail(fam);
+    const mobileTitle = document.getElementById('mobileCurrentWord');
+    if (mobileTitle) mobileTitle.textContent = `${fam.headword} (#${fam.rank})`;
+  }
+  if (autoCloseMobile) {
+    closeMobileDrawer();
+    document.getElementById('mainView').scrollTop = 0;
+  }
+}
+
+function toggleRare(checked) {
+  hideRare = checked;
+  document.getElementById('mainView').classList.toggle('hide-rare', hideRare);
+}
+
+function switchTense(lemmaId, tenseKey) {
+  selectedTenseMap.set(lemmaId, tenseKey);
+  const fam = allFamilies.find(f => f.rank === activeRank);
+  if (fam) renderFamilyDetail(fam);
+}
+
+function formatIpaDisplay(rawIpa) {
+  if (!rawIpa) return '';
+  const cleaned = rawIpa.replace(/^\/|\/$/g, '').trim();
+  return cleaned ? `[${cleaned}]` : '';
+}
+
+function renderGenderBadge(gender) {
+  if (!gender) return '';
+  if (gender === 'm.') return `<span class="gender-badge gender-m" title="阳性名词 Nom masculin">n.m. 阳性</span>`;
+  if (gender === 'f.') return `<span class="gender-badge gender-f" title="阴性名词 Nom féminin">n.f. 阴性</span>`;
+  return `<span class="gender-badge gender-mf">${gender}</span>`;
+}
+
+function renderAuxBadge(aux) {
+  if (!aux) return '';
+  if (aux === 'être') return `<span class="aux-badge aux-etre" title="复合过去时需用 être 作助动词，且过去分词需配合主语性数">助动词: être ⚠️</span>`;
+  return `<span class="aux-badge aux-avoir" title="复合过去时用 avoir 作助动词">助动词: avoir</span>`;
+}
+
+function renderFamilyDetail(fam) {
+  const main = document.getElementById('mainView');
+  main.classList.toggle('hide-rare', hideRare);
+  const hwSafe = escapeAttr(fam.headword);
+  const hwIpaText = formatIpaDisplay(fam.phonetic);
+  const vInit = pickBestFrenchVoice('fr-FR');
+  if (vInit) currentVoiceName = vInit.name;
+
+  const guideHtml = (fam.family_guide && (fam.family_guide.root_logic || fam.family_guide.core_distinction)) ? `
+    <div class="guide-box">
+      ${fam.family_guide.root_logic ? `<div><strong>构词与词源逻辑：</strong>${fam.family_guide.root_logic}</div>` : ''}
+      ${fam.family_guide.core_distinction ? `<div class="guide-distinction"><strong>法语语法与辨析：</strong>${fam.family_guide.core_distinction}</div>` : ''}
+    </div>
+  ` : '';
+
+  const branchesHtml = fam.pos_branches.map((b, bIdx) => {
+    const lemmasHtml = b.lemmas.map((l, lIdx) => {
+      const tierLabel = l.tier === 'core' ? 'CORE 核心' : (l.tier === 'common' ? 'COMMON 常见' : 'RARE 罕见');
+      const wSafe = escapeAttr(l.lemma);
+      const lIpaText = formatIpaDisplay(l.phonetic);
+      const uniqueLemmaKey = `${fam.rank}-${bIdx}-${lIdx}`;
+
+      const defHtml = (l.def_zh || l.def_fr) ? `
+        <div class="lemma-def">
+          ${l.def_zh ? `<span class="def-zh">${l.def_zh}</span>` : ''}
+          ${l.def_fr ? `<span class="def-fr">${l.def_fr}</span>` : ''}
+        </div>
+      ` : '';
+
+      const usageHtml = l.usage_note ? `<div class="lemma-usage"><strong>💡 用法与配合提示：</strong>${l.usage_note}</div>` : '';
+
+      const examplesHtml = (l.examples && l.examples.length) ? `
+        <div class="lemma-examples">
+          ${l.examples.map(ex => `
+            <div class="example-item">
+              <div class="ex-fr">
+                <span>• ${ex.fr}</span>
+                <span class="mini-speak" title="朗读法语例句" onclick="speakText('${escapeAttr(ex.fr)}', 'fr-FR')">🔊</span>
+              </div>
+              ${ex.zh ? `<div class="ex-zh">${ex.zh}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      // 性数配合及基础词形胶囊
+      const infHtml = l.inflections ? Object.entries(l.inflections).map(([slot, words]) => {
+        const agreementCls = slot.startsWith('m_') ? 'agreement-m' : (slot.startsWith('f_') ? 'agreement-f' : '');
+        const clickableWords = words.map(w => {
+          const speakWord = w.split('(')[0].trim();
+          return `<strong class="word-click" title="点击朗读: ${speakWord}" onclick="speakText('${escapeAttr(speakWord)}', 'fr-FR')">${w}</strong>`;
+        }).join(', ');
+        return `
+          <div class="slot-pill ${agreementCls}">
+            <span class="slot-label">${SLOT_NAMES[slot] || slot}:</span>
+            ${clickableWords}
+          </div>
+        `;
+      }).join('') : '';
+
+      // 法语动词变位矩阵渲染
+      let conjHtml = '';
+      if (l.conjugations && Object.keys(l.conjugations).length > 0) {
+        const availableTenses = Object.keys(l.conjugations);
+        const activeTense = selectedTenseMap.get(uniqueLemmaKey) || availableTenses[0];
+        const forms = l.conjugations[activeTense] || [];
+
+        const tabsHtml = availableTenses.map(tKey => `
+          <button class="tense-tab ${tKey === activeTense ? 'active' : ''}" onclick="switchTense('${uniqueLemmaKey}', '${tKey}')">
+            ${TENSE_LABELS[tKey] || tKey}
+          </button>
+        `).join('');
+
+        const cellsHtml = forms.map((formStr, pIdx) => {
+          const speakStr = getSpeakableConjugation(pIdx, formStr, activeTense);
+          return `
+            <div class="conj-cell" title="${speakStr ? '点击朗读: ' + speakStr : ''}" onclick="${speakStr ? `speakText('${escapeAttr(speakStr)}', 'fr-FR')` : ''}">
+              ${formatPronounForm(pIdx, formStr, activeTense === 'subjonctif')}
+            </div>
+          `;
+        }).join('');
+
+        conjHtml = `
+          <div class="conj-box">
+            <div class="conj-header">
+              <span class="conj-title">动词变位表 (点击任一人称发音)</span>
+              <div class="tense-tabs">${tabsHtml}</div>
+            </div>
+            <div class="conj-grid">${cellsHtml}</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="lemma-card tier-${l.tier}">
+          <div class="lemma-top">
+            <span class="lemma-word">${l.lemma}</span>
+            ${renderGenderBadge(l.gender)}
+            ${renderAuxBadge(l.aux)}
+            ${l.group ? `<span class="group-badge">${l.group}</span>` : ''}
+            ${lIpaText ? `<span class="phonetic-sm" title="点击朗读法语" onclick="speakText('${wSafe}', 'fr-FR')">${lIpaText}</span>` : ''}
+            <button class="tts-btn" title="法国法语发音" onclick="speakText('${wSafe}', 'fr-FR', this)">🔊 法国</button>
+            <button class="tts-btn" title="加拿大法语发音" onclick="speakText('${wSafe}', 'fr-CA', this)">🔊 加拿大</button>
+            <span class="tag tag-${l.tier}">${tierLabel}</span>
+            <span style="font-size:12px;color:#94a3b8;">Zipf: ${l.zipf}</span>
+          </div>
+          ${defHtml}
+          ${usageHtml}
+          ${examplesHtml}
+          <div class="inflection-grid">${infHtml}</div>
+          ${conjHtml}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="pos-section">
+        <div class="pos-header">${getPosBadgeHtml(b.pos, true)} 词性分支</div>
+        ${lemmasHtml}
+      </div>
+    `;
+  }).join('');
+
+  main.innerHTML = `
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span class="header-title">${fam.headword}</span>
+        ${hwIpaText ? `<span class="phonetic-tag" title="点击朗读法语" onclick="speakText('${hwSafe}', 'fr-FR')">${hwIpaText}</span>` : ''}
+        <button class="tts-btn" title="法国标准发音" onclick="speakText('${hwSafe}', 'fr-FR', this)">🔊 法国发音</button>
+        <button class="tts-btn" title="魁北克/加拿大法语发音" onclick="speakText('${hwSafe}', 'fr-CA', this)">🔊 加拿大法语</button>
+        <span style="color:#64748b;font-size:13.5px;">Rank #${fam.rank} · 主词性</span>
+        ${getPosBadgeHtml(fam.primary_pos, false)}
+      </div>
+      <div class="toolbar-right" style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+        <span class="voice-status" id="voiceStatusBadge">当前语音: ${currentVoiceName}</span>
+        <label style="font-size:13.5px; cursor:pointer; user-select:none;">
+          <input type="checkbox" ${hideRare ? 'checked' : ''} onchange="toggleRare(this.checked)"> 隐藏罕见词 (Rare)
+        </label>
+      </div>
+    </div>
+    ${guideHtml}
+    ${branchesHtml}
+  `;
+}
+</script>
+</body>
+</html>
