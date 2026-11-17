@@ -1,7 +1,7 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.17.08";
+const APP_VERSION = "2026.11.17.10";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -16,6 +16,7 @@ let verbPhrasesMap = {};
 let topicTaxonomy = [];
 let sidebarMode = "freq";
 let activeTopicSubKey = null;
+let activeTopicItemImg = null;
 
 let visualHintByRank = new Map();
 const VISUAL_SUB_HINTS = {
@@ -656,6 +657,7 @@ async function ensureTopicTaxonomyLoaded() {
 
 async function setSidebarMode(mode) {
   sidebarMode = mode;
+  if (mode !== 'topic') activeTopicItemImg = null;
   document.querySelectorAll(".view-mode-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
   });
@@ -666,7 +668,8 @@ async function setSidebarMode(mode) {
   applyFilters();
 }
 
-function selectTopicFamily(rank, subId) {
+function selectTopicFamily(rank, subId, customImg = '') {
+  activeTopicItemImg = customImg || null;
   activeTopicSubKey = subId;
 
   // 直接从当前主题树锁定该二级子目录的完整序列
@@ -734,7 +737,7 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
         if (!fam) return "";
         const isActive = fam.rank === activeRank && (!activeTopicSubKey || activeTopicSubKey === subId);
         return `
-          <div class="family-item ${isActive ? "active" : ""}" data-rank="${fam.rank}" data-sub-key="${subId}" onclick="selectTopicFamily(${fam.rank}, '${subId}')">
+          <div class="family-item ${isActive ? "active" : ""}" data-rank="${fam.rank}" data-sub-key="${subId}" onclick="selectTopicFamily(${fam.rank}, '${subId}', '${escapeAttr(it.img || '')}')">
             <span>${favoriteRanks.has(fam.rank) ? "⭐ " : ""}${fam.headword}</span>
             <span class="family-meta">
               ${it.note ? `<span class="topic-hit-note" title="${escapeAttr(it.note)}">${it.note}</span>` : ""}
@@ -1159,8 +1162,9 @@ function renderFamilyDetail(fam) {
       }).join("");
 
       const topicHint = visualHintByRank.has(fam.rank) ? visualHintByRank.get(fam.rank) : null;
-      const visualHtml = (b.pos === "n." && l.img)
-        ? `<div class="lemma-visual-wrap" onclick="window.open('./images/${l.img}', '_blank')" title="点击查看大图"><img src="./images/${l.img}" alt="${wSafe}" loading="lazy" onerror="this.parentElement.remove()"></div>`
+      const resolvedImg = (b.pos === "n." && l.lemma.toLowerCase() === fam.headword.toLowerCase() && activeTopicItemImg) ? activeTopicItemImg : l.img;
+      const visualHtml = (b.pos === "n." && resolvedImg)
+        ? `<div class="lemma-visual-wrap" onclick="window.open('./images/${resolvedImg}', '_blank')" title="点击查看大图"><img src="./images/${resolvedImg}" alt="${wSafe}" loading="lazy" onerror="this.parentElement.remove()"></div>`
         : ((b.pos === "n." && topicHint !== null && l.tier !== "rare")
             ? `<div class="lemma-visual-wrap loading" data-visual-word="${wSafe}" data-visual-hint="${escapeAttr(topicHint)}" title="点击查看大图"></div>`
             : "");
