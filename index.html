@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>英语词族与派生形态树词典</title>
-<link rel="stylesheet" href="./css/app.css?v=2026.11.16.8">
+<link rel="stylesheet" href="./css/app.css?v=2026.11.16.9">
 </head>
 <body>
 
@@ -24,6 +24,10 @@
   </div>
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或词形...">
+  </div>
+  <div class="view-mode-bar" id="viewModeBar">
+    <button class="view-mode-btn active" data-mode="freq" onclick="setSidebarMode('freq')">📊 按词频</button>
+    <button class="view-mode-btn" data-mode="topic" onclick="setSidebarMode('topic')">🗂️ 按主题</button>
   </div>
   <div class="pos-filter-bar" id="posFilterBar">
     <button class="pos-chip active" data-pos="ALL" onclick="setPosFilter('ALL')">全部</button>
@@ -79,6 +83,6 @@
   <div class="dict-modal" id="dictationModalContent"></div>
 </div>
 
-<script type="module" src="./js/app.js?v=2026.11.16.8"></script>
+<script type="module" src="./js/app.js?v=2026.11.16.9"></script>
 </body>
 </html>

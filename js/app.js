@@ -1,9 +1,10 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.16.8";
+const APP_VERSION = "2026.11.16.9";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
+const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
 
 let allFamilies = [];
 let familyByRank = new Map();
@@ -12,6 +13,8 @@ let searchIndexMap = new Map();
 let currentFilteredList = [];
 let activeRank = null;
 let verbPhrasesMap = {};
+let topicTaxonomy = [];
+let sidebarMode = "freq";
 
 let studyState = loadStudyState();
 let favoriteRanks = new Set(studyState.favorites);
@@ -510,7 +513,11 @@ function applyFilters() {
     statusEl.textContent = `筛选 [${parts.join(" · ")}]: ${filtered.length.toLocaleString()} 词族`;
   }
 
-  renderGroupedSidebar(filtered, Boolean(q));
+  if (sidebarMode === "topic") {
+    renderTopicSidebar(new Set(filtered.map(f => f.rank)), Boolean(q));
+  } else {
+    renderGroupedSidebar(filtered, Boolean(q));
+  }
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -591,6 +598,109 @@ function toggleGroup(groupId) {
   const willCollapse = !el.classList.contains("collapsed");
   el.classList.toggle("collapsed", willCollapse);
   openState.set(groupId, !willCollapse);
+}
+
+
+async function ensureTopicTaxonomyLoaded() {
+  if (topicTaxonomy.length) return topicTaxonomy;
+  try {
+    const resp = await fetch(TOPIC_URL);
+    if (resp.ok) {
+      topicTaxonomy = (await resp.json()) || [];
+    }
+  } catch (e) {
+    console.warn("主题索引加载失败:", e);
+  }
+  return topicTaxonomy;
+}
+
+async function setSidebarMode(mode) {
+  sidebarMode = mode;
+  document.querySelectorAll(".view-mode-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+  });
+  if (mode === "topic") {
+    document.getElementById("familyList").innerHTML = '<div style="padding:20px;color:#64748b;font-size:13px;text-align:center;">正在加载语义主题分类树...</div>';
+    await ensureTopicTaxonomyLoaded();
+  }
+  applyFilters();
+}
+
+function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
+  const container = document.getElementById("familyList");
+  if (!topicTaxonomy.length) {
+    container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;text-align:center;">未加载到 topic_taxonomy.json</div>';
+    return;
+  }
+
+  let html = "";
+  const activeRankOrder = [];
+
+  topicTaxonomy.forEach((cat, cIdx) => {
+    const catId = `topic-cat-${cat.id}`;
+    const isCatOpen = forceExpandAll ? true : (openState.has(catId) ? openState.get(catId) : (cIdx === 0));
+    let subHtml = "";
+    let catTotal = 0;
+
+    (cat.subcategories || []).forEach((sub, sIdx) => {
+      const matchedItems = (sub.items || []).filter(it => allowedRanksSet.has(it.rank));
+      if (!matchedItems.length) return;
+      catTotal += matchedItems.length;
+      matchedItems.forEach(it => {
+        const fam = familyByRank.get(it.rank);
+        if (fam) activeRankOrder.push(fam);
+      });
+
+      const subId = `topic-sub-${cat.id}-${sub.id}`;
+      const isSubOpen = forceExpandAll ? true : (openState.has(subId) ? openState.get(subId) : (cIdx === 0 && sIdx === 0));
+
+      const itemsHtml = matchedItems.map(it => {
+        const fam = familyByRank.get(it.rank);
+        if (!fam) return "";
+        return `
+          <div class="family-item ${fam.rank === activeRank ? "active" : ""}" data-rank="${fam.rank}" onclick="selectFamily(${fam.rank}, true, true)">
+            <span>${favoriteRanks.has(fam.rank) ? "⭐ " : ""}${fam.headword}</span>
+            <span class="family-meta">
+              ${it.note ? `<span class="topic-hit-note" title="${escapeAttr(it.note)}">${it.note}</span>` : ""}
+              <span class="family-rank">#${fam.rank}</span>
+            </span>
+          </div>
+        `;
+      }).join("");
+
+      subHtml += `
+        <div class="sub-group ${isSubOpen ? "" : "collapsed"}" id="${subId}">
+          <div class="sub-group-header" onclick="toggleGroup('${subId}')">
+            <span><span class="arrow-icon">▼</span>${sub.name}</span>
+            <span class="sub-count">${matchedItems.length} 词</span>
+          </div>
+          <div class="sub-group-body">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    });
+
+    if (!catTotal) return;
+
+    html += `
+      <div class="freq-group ${isCatOpen ? "" : "collapsed"}" id="${catId}">
+        <div class="freq-group-header" onclick="toggleGroup('${catId}')">
+          <span><span class="arrow-icon">▼</span>${cat.icon || "📁"} ${cat.name}</span>
+          <span class="group-count">${catTotal.toLocaleString()} 词</span>
+        </div>
+        <div class="freq-group-body">
+          ${subHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  if (activeRankOrder.length) {
+    currentFilteredList = activeRankOrder;
+  }
+
+  container.innerHTML = html || '<div style="padding:20px;color:#94a3b8;font-size:13px;text-align:center;">当前筛选条件下无匹配主题词族</div>';
 }
 
 function renderGroupedSidebar(list, forceExpandAll = false) {
@@ -991,6 +1101,7 @@ window.stepFamily = stepFamily;
 window.speakCurrentHeadword = speakCurrentHeadword;
 window.toggleCurrentFavorite = toggleCurrentFavorite;
 window.speakText = speakText;
+window.setSidebarMode = setSidebarMode;
 window.setPosFilter = setPosFilter;
 window.toggleSecondaryPos = toggleSecondaryPos;
 window.toggleGroup = toggleGroup;
