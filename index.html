@@ -3,6 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+(function(){
+  const CACHE_VER = 'wf-dict-cache-v20261117';
+  const origFetch = window.fetch.bind(window);
+  function expandCompactIndex(raw) {
+    if (!Array.isArray(raw) || !raw.length || !Array.isArray(raw[0])) return raw;
+    return raw.map(([rank, headword, branches]) => ({
+      rank,
+      headword,
+      main_pos: "",
+      ipa: "",
+      cefr: "",
+      _lite: true,
+      pos_branches: (branches || []).map(([pos, lemmas]) => ({
+        pos,
+        lemmas: (lemmas || []).map(lemma => ({ lemma, zh: "", rare: false, forms: [] }))
+      }))
+    }));
+  }
+  window.fetch = async function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const isJson = url.includes('.json');
+    if (!isJson || !('caches' in window)) return origFetch(input, init);
+    const cache = await caches.open(CACHE_VER);
+    const cached = await cache.match(url);
+    if (cached) {
+      if (url.includes('word_index.json')) {
+        const raw = await cached.json();
+        return new Response(JSON.stringify(expandCompactIndex(raw)), { headers: { 'Content-Type': 'application/json' } });
+      }
+      return cached;
+    }
+    const resp = await origFetch(input, init);
+    if (resp && resp.ok) {
+      cache.put(url, resp.clone()).catch(() => {});
+      if (url.includes('word_index.json')) {
+        const raw = await resp.json();
+        return new Response(JSON.stringify(expandCompactIndex(raw)), { headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+    return resp;
+  };
+})();
+</script>
 <title>英语词族与派生形态树词典</title>
 <link rel="stylesheet" href="./css/app.css?v=2026.11.17.19">
 </head>
