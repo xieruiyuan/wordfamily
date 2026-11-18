@@ -58,6 +58,7 @@
   <div class="status-bar">
     <span id="loadStatus">正在自动加载词库...</span>
     <div class="status-actions">
+      <button class="fallback-btn" onclick="window.__pvLab.open()" title="核心动词短语图谱">🔗 短语</button>
       <button class="fallback-btn" onclick="window.__dictCtrl.open('setup')" title="单词默写与错题本">✍️ 默写</button>
       <label class="fallback-btn" title="本地离线浏览时可手动选择 JSON">
         本地文件
@@ -104,7 +105,7 @@
   <div class="mobile-topbar">
     <button class="mobile-menu-btn" onclick="openMobileDrawer()">☰ 词库</button>
     <span id="mobileCurrentWord" style="font-weight:700; font-size:14.5px; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-align:center;"></span>
-    <button class="mobile-nav-btn" style="background:#2563eb;color:#ffffff;border-color:#2563eb;padding:5px 10px;" onclick="window.__dictCtrl.open('setup')">✍️ 默写</button>
+    <button class="mobile-nav-btn" style="padding:5px 8px;margin-right:4px;" onclick="window.__pvLab.open()">🔗 短语</button><button class="mobile-nav-btn" style="background:#2563eb;color:#ffffff;border-color:#2563eb;padding:5px 10px;" onclick="window.__dictCtrl.open('setup')">✍️ 默写</button>
   </div>
 
   <div class="main" id="mainView">
@@ -129,5 +130,6 @@
 </div>
 
 <script type="module" src="./js/app.js?v=2026.11.17.19"></script>
+<script type="module" src="./js/phrasal_lab.js?v=2026.11.17.20"></script>
 </body>
 </html>
