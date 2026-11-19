@@ -1,7 +1,32 @@
 import { loadStudyState, saveStudyState } from "./store.js";
 import { DictationController } from "./dictation.js";
 
-const APP_VERSION = "2026.11.19.1";
+function formatDefEn(raw) {
+  if (!raw) return "";
+  const esc = String(raw)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  const decorateBody = (txt) => txt
+    .replace(/\[([A-Z,\s]+)\]/g, '<span class="def-badge def-syn">$1</span>')
+    .replace(/\((\+[^)]+)\)/g, '<span class="def-badge def-prep">$1</span>')
+    .replace(/\(([a-z][a-z\s/,-]{1,32})\)/g, '<span class="def-badge def-reg">$1</span>');
+
+  // 匹配编号义项：1. ... 2. ...
+  const items = [];
+  const re = /(?:^|\s)(\d+\.)\s+([\s\S]*?)(?=\s+\d+\.\s+|$)/g;
+  let m;
+  while ((m = re.exec(esc)) !== null) {
+    items.push(`<div class="def-sense-item"><span class="def-num">${m[1]}</span><span class="def-text">${decorateBody(m[2].trim())}</span></div>`);
+  }
+  if (items.length > 0) {
+    return `<div class="def-sense-list">${items.join("")}</div>`;
+  }
+  return decorateBody(esc);
+}
+
+const APP_VERSION = "2026.11.19.2";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -1175,7 +1200,7 @@ function renderFamilyDetail(fam) {
       const defHtml = (l.def_zh || l.def_en) ? `
         <div class="lemma-def">
           ${l.def_zh ? `<span class="def-zh">${l.def_zh}</span>` : ""}
-          ${l.def_en ? `<span class="def-en">${l.def_en}</span>` : ""}
+          ${l.def_en ? `<div class="def-en">${formatDefEn(l.def_en)}</div>` : ""}
         </div>
       ` : "";
 
