@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script>
 (function(){
-  const CACHE_VER = 'wf-dict-cache-v20261117';
+  const CACHE_VER = 'wf-dict-cache-v20261119-1';
+  caches.keys().then(ks => ks.forEach(k => { if (k.startsWith('wf-dict-cache-') && k !== CACHE_VER) caches.delete(k); }));
   const origFetch = window.fetch.bind(window);
   function expandCompactIndex(raw) {
     if (!Array.isArray(raw) || !raw.length || !Array.isArray(raw[0])) return raw;
