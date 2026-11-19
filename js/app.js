@@ -26,7 +26,7 @@ function formatDefEn(raw) {
   return decorateBody(esc);
 }
 
-const APP_VERSION = "2026.11.19.2";
+const APP_VERSION = "2026.11.19.3";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
@@ -525,6 +525,7 @@ function setPosFilter(pos) {
   });
   updateFavBadge();
   applyFilters();
+  if (activeRank && pos !== "FAV") selectFamily(activeRank, false, false);
 }
 
 function toggleSecondaryPos(checked) {
@@ -1191,7 +1192,10 @@ function renderFamilyDetail(fam) {
     </div>
   ` : "";
 
-  const branchesHtml = (sidebarMode === "topic" ? [...fam.pos_branches].sort((a, b) => (a.pos === "n." ? -1 : b.pos === "n." ? 1 : 0)) : fam.pos_branches).map(b => {
+  const orderedBranches = selectedPos !== "ALL"
+    ? [...fam.pos_branches].sort((a, b) => (isPosMatch(b.pos, selectedPos) ? 1 : 0) - (isPosMatch(a.pos, selectedPos) ? 1 : 0))
+    : (sidebarMode === "topic" ? [...fam.pos_branches].sort((a, b) => (a.pos === "n." ? -1 : b.pos === "n." ? 1 : 0)) : fam.pos_branches);
+  const branchesHtml = orderedBranches.map(b => {
     const lemmasHtml = b.lemmas.map(l => {
       const tierLabel = l.tier === "core" ? "CORE 核心" : (l.tier === "common" ? "COMMON 常见" : (l.tier === "uncommon" ? "UNCOMMON 进阶" : "RARE 罕见"));
       const wSafe = escapeAttr(l.lemma);
