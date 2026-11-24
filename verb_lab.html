@@ -1,224 +1,270 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>动词四维语义辨析库 · Native Verb Taxonomy Lab</title>
+<title>Native Verb Taxonomy Lab · 动词四维语义辨析库</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", Roboto, sans-serif;
-    background: #f1f5f9;
-    color: #0f172a;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    -webkit-font-smoothing: antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "PingFang SC", sans-serif;
+    background: #f8fafc; color: #0f172a;
+    display: flex; height: 100vh; overflow: hidden;
   }
 
   /* 左侧边栏 */
   .sidebar {
-    width: 268px;
-    background: #ffffff;
-    border-right: 1px solid #e2e8f0;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
+    width: 268px; flex-shrink: 0; background: #ffffff;
+    border-right: 1px solid #e2e8f0; display: flex; flex-direction: column;
     overflow-y: auto;
   }
-  .brand { padding: 18px 20px 14px; border-bottom: 1px solid #f1f5f9; }
-  .brand h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 7px; color: #0f172a; letter-spacing: -0.01em; }
-  .brand p { font-size: 12px; color: #64748b; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
-  .brand a { color: #2563eb; text-decoration: none; font-weight: 600; }
-  .brand a:hover { text-decoration: underline; }
+  .brand { padding: 16px 18px 14px; border-bottom: 1px solid #f1f5f9; }
+  .brand h1 { font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; }
+  .meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px; font-size: 11.5px; color: #64748b;
+  }
+  .meta-row a { color: #2563eb; text-decoration: none; font-weight: 600; }
+  .meta-row a:hover { text-decoration: underline; }
 
-  .mode-list { padding: 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f1f5f9; }
+  .mode-list { padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 4px; }
   .mode-btn {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 9px 12px; border-radius: 8px; border: 1px solid transparent;
-    background: transparent; cursor: pointer; font-size: 13px; font-weight: 600;
-    color: #334155; text-align: left; transition: all 0.15s ease;
+    width: 100%; padding: 8px 11px; border: none; border-radius: 8px;
+    background: transparent; color: #334155; font-size: 13px; font-weight: 600;
+    cursor: pointer; text-align: left; transition: all 0.12s;
   }
-  .mode-btn:hover { background: #f8fafc; color: #0f172a; }
-  .mode-btn.active { background: #0f172a; color: #ffffff; box-shadow: 0 2px 6px rgba(15,23,42,0.12); }
-  .mode-badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #f1f5f9; color: #475569; font-weight: 600; }
+  .mode-btn:hover { background: #f1f5f9; }
+  .mode-btn.active { background: #0f172a; color: #ffffff; }
+  .mode-badge {
+    font-size: 11px; font-weight: 700; padding: 1.5px 7px; border-radius: 99px;
+    background: #f1f5f9; color: #475569;
+  }
   .mode-btn.active .mode-badge { background: rgba(255,255,255,0.18); color: #ffffff; }
 
-  .dom-header { padding: 14px 20px 8px; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; }
-  .dom-list { padding: 0 12px 24px; display: flex; flex-direction: column; gap: 2px; }
+  .dom-header {
+    padding: 12px 18px 6px; font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.06em; color: #94a3b8; text-transform: uppercase;
+  }
+  .dom-list { padding: 0 10px 18px; display: flex; flex-direction: column; gap: 2px; }
   .dom-btn {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 7px 12px; border-radius: 7px; border: none; background: transparent;
-    cursor: pointer; font-size: 12.5px; color: #475569; text-align: left; transition: background 0.12s;
+    width: 100%; padding: 6.5px 11px; border: none; border-radius: 7px;
+    background: transparent; color: #475569; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; text-align: left; transition: all 0.1s;
   }
   .dom-btn:hover { background: #f8fafc; color: #0f172a; }
-  .dom-btn.active { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
-  .dom-count { font-size: 11.5px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  .dom-btn.active { background: #eff6ff; color: #1d4ed8; font-weight: 700; }
+  .dom-count { font-size: 11px; color: #94a3b8; font-weight: 600; }
   .dom-btn.active .dom-count { color: #2563eb; }
 
   /* 右侧主区 */
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
   .topbar {
-    background: rgba(255,255,255,0.96);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid #e2e8f0;
-    padding: 12px 26px;
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    z-index: 10;
+    padding: 11px 22px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0; z-index: 10;
   }
-  .topbar-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .mode-desc { font-size: 13px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 6px; }
-  .filter-stat { font-size: 12px; color: #64748b; }
-
-  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .topbar-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+  .mode-desc { font-size: 13px; color: #334155; font-weight: 500; }
+  .stat-pill {
+    font-size: 11.5px; color: #475569; background: #f1f5f9;
+    padding: 3px 10px; border-radius: 99px; font-weight: 600; white-space: nowrap;
+  }
+  .filters { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; overflow-x: auto; }
   .ctrl {
-    height: 32px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 7px;
-    background: #ffffff; font-size: 12.5px; color: #1e293b; outline: none; cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    padding: 5px 9px; border: 1px solid #cbd5e1; border-radius: 7px;
+    font-size: 12px; background: #ffffff; color: #1e293b; outline: none; white-space: nowrap;
   }
-  .ctrl:hover { border-color: #94a3b8; }
-  .ctrl:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
-  .ctrl.active-zh { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; font-weight: 600; }
-  .search-input { width: 210px; cursor: text; }
+  .ctrl:focus { border-color: #3b82f6; }
+  .toggle-btn { cursor: pointer; font-weight: 600; background: #f8fafc; }
+  .toggle-btn:hover { background: #f1f5f9; }
+  .toggle-btn.active-zh { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+  .search-input { flex: 1; min-width: 140px; max-width: 220px; }
   .reset-btn {
-    height: 32px; padding: 0 10px; border: 1px solid #fecaca; border-radius: 7px;
-    background: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 600; cursor: pointer;
-    display: none;
+    padding: 5px 10px; border: 1px solid #e2e8f0; border-radius: 7px;
+    background: #f8fafc; color: #64748b; font-size: 12px; cursor: pointer; white-space: nowrap;
   }
-  .reset-btn:hover { background: #fee2e2; }
+  .reset-btn:hover { background: #f1f5f9; color: #0f172a; }
 
+  /* 内容流 */
   .content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 26px 56px;
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
+    flex: 1; overflow-y: auto; padding: 20px 24px 54px;
+    display: flex; flex-direction: column; gap: 26px;
   }
 
-  /* 语义框架大卡片 */
+  /* 语义框架大类卡片（Level 1 主容器） */
   .group-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 20px 22px;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.03), 0 4px 14px rgba(15,23,42,0.02);
+    background: #ffffff; border: 1.5px solid #cbd5e1; border-top: 4px solid #0f172a;
+    border-radius: 14px; padding: 18px 22px 22px;
+    box-shadow: 0 3px 10px rgba(15,23,42,0.05);
   }
-  .group-head {
+  .group-header {
     display: flex; justify-content: space-between; align-items: flex-start;
-    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+    gap: 14px; cursor: pointer; user-select: none;
+    padding-bottom: 12px; border-bottom: 1.5px solid #e2e8f0;
   }
-  .group-title-wrap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .group-title { font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; line-height: 1.35; }
-  .group-count-pill { font-size: 12px; font-weight: 600; color: #475569; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; }
-  .group-dom-tag { font-size: 11.5px; padding: 2.5px 9px; border-radius: 6px; background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+  .group-card.is-collapsed .group-header { padding-bottom: 0; border-bottom: none; }
+  .group-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+  .group-title { font-size: 18.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.015em; }
 
-  /* 梯度图例（仅 intensity 显示） */
-  .legend {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #475569;
-    background: #f8fafc; padding: 4px 11px; border-radius: 999px; border: 1px solid #e2e8f0;
+  /* 句法配价分区横幅（Level 2 子分类主轴） */
+  .syntax-sec {
+    margin-top: 22px; padding-top: 18px; border-top: 1.5px dashed #cbd5e1;
   }
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .syntax-sec:first-child { margin-top: 4px; padding-top: 0; border-top: none; }
+  .syntax-banner {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    padding: 10px 14px; margin-bottom: 12px; border-radius: 9px;
+    border: 1px solid #cbd5e1; border-left: 5px solid #3b82f6; background: #f1f5f9;
+  }
+  .syntax-banner.sec-ergative { background: #ecfeff; border-color: #a5f3fc; border-left-color: #0891b2; }
+  .syntax-banner.sec-transitive { background: #eef2ff; border-color: #c7d2fe; border-left-color: #4f46e5; }
+  .syntax-banner.sec-intrans_prep { background: #fffbeb; border-color: #fde68a; border-left-color: #d97706; }
+  .syntax-banner.sec-intrans_auto { background: #f1f5f9; border-color: #cbd5e1; border-left-color: #475569; }
+  .syntax-title { font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
+  .syntax-formula {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+    font-weight: 700; color: #0f172a; background: #ffffff; border: 1px solid rgba(15,23,42,0.12);
+    padding: 2px 8px; border-radius: 5px; margin-left: 8px;
+  }
+  .syntax-note { font-size: 12px; color: #334155; font-weight: 500; }
+  .group-count {
+    font-size: 12px; font-weight: 700; color: #334155; background: #e2e8f0;
+    padding: 2.5px 9px; border-radius: 99px;
+  }
+  .group-domain {
+    font-size: 12px; font-weight: 600; color: #1d4ed8; background: #dbeafe;
+    padding: 2.5px 10px; border-radius: 99px;
+  }
+  .grp-collapse-btn {
+    padding: 5px 12px; border-radius: 7px; border: 1px solid #cbd5e1;
+    background: #f8fafc; color: #334155; font-size: 12px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.12s;
+  }
+  .grp-collapse-btn:hover { background: #0f172a; color: #ffffff; border-color: #0f172a; }
+  .scale-legend {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    margin-top: 8px; font-size: 11.5px; color: #64748b; font-weight: 500;
+  }
+  .scale-legend .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; }
+  .group-body { margin-top: 14px; }
+  .group-card.is-collapsed .group-body { display: none; }
+  .group-desc-en {
+    padding: 9px 13px; background: #f8fafc; border-left: 3px solid #3b82f6;
+    border-radius: 0 8px 8px 0; font-size: 12.8px; line-height: 1.55; color: #334155;
+    margin-bottom: 14px;
+  }
+  .group-desc-zh {
+    padding: 7px 13px; background: #fefce8; border-left: 3px solid #eab308;
+    border-radius: 0 8px 8px 0; font-size: 12.3px; line-height: 1.5; color: #713f12;
+    margin-top: -8px; margin-bottom: 14px;
+  }
 
-  /* 母语英文框架框 */
-  .frame-box {
-    background: linear-gradient(to right, #f8fafc, #ffffff);
-    border: 1px solid #e2e8f0;
-    border-left: 4px solid #2563eb;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 18px;
-  }
-  .frame-en { font-size: 13.5px; line-height: 1.65; color: #1e293b; font-weight: 500; }
-  .frame-zh { font-size: 12.5px; line-height: 1.5; color: #2563eb; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
-
-  /* 动词卡片网格 */
-  .items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(305px, 1fr));
-    gap: 14px;
-  }
+  /* 单词卡片网格 */
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 10px; }
   .verb-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 10px;
-    transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between;
+    transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
   }
-  .verb-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(15,23,42,0.06);
-    border-color: #cbd5e1;
+  .verb-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,23,42,0.06); border-color: #cbd5e1; }
+  .verb-card.is-pv { background: #faf5ff; border-color: #e9d5ff; }
+  .verb-card.lv-1 { border-left: 3.5px solid #10b981; }
+  .verb-card.lv-2 { border-left: 3.5px solid #3b82f6; }
+  .verb-card.lv-3 { border-left: 3.5px solid #eab308; }
+  .verb-card.lv-4 { border-left: 3.5px solid #f97316; }
+  .verb-card.lv-5 { border-left: 3.5px solid #ef4444; }
+
+  .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+  .v-head { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+  .v-lemma { font-size: 15.5px; font-weight: 800; color: #0f172a; }
+
+  .tag-trans {
+    font-size: 10px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
-  .verb-card.is-pv { background: #fcfaff; border-color: #ede9fe; }
-  .verb-card.is-pv:hover { border-color: #d8b4fe; }
+  .tag-val-erg { background: #ecfeff; color: #0e7490; border: 1px solid #cffafe; }
+  .tag-val-tr { background: #eef2ff; color: #3730a3; border: 1px solid #e0e7ff; }
+  .tag-val-trprep { background: #fae8ff; color: #86198f; border: 1px solid #f5d0fe; }
+  .tag-val-prep { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .tag-val-auto { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
 
-  /* 梯度左边框色条（仅 intensity） */
-  .verb-card.lv-1 { border-left: 4px solid #10b981; }
-  .verb-card.lv-2 { border-left: 4px solid #3b82f6; }
-  .verb-card.lv-3 { border-left: 4px solid #eab308; }
-  .verb-card.lv-4 { border-left: 4px solid #f97316; }
-  .verb-card.lv-5 { border-left: 4px solid #ef4444; }
+  .tag-pv { font-size: 10px; font-weight: 800; padding: 1.5px 5px; border-radius: 4px; background: #7c3aed; color: #ffffff; }
+  .ex-toggle-btn {
+    font-size: 10.5px; font-weight: 600; padding: 1.5px 6px; border-radius: 4px;
+    border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; cursor: pointer;
+  }
+  .ex-toggle-btn:hover, .ex-toggle-btn.open { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 
-  .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .v-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .v-lemma { font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; }
-  .tag-trans { font-size: 10.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; background: #eef2ff; color: #4338ca; }
-  .tag-pv { font-size: 10.5px; font-weight: 600; padding: 1.5px 6px; border-radius: 4px; background: #7c3aed; color: #ffffff; }
-  .tag-poly { font-size: 10.5px; padding: 1.5px 5px; border-radius: 4px; background: #f1f5f9; color: #64748b; }
-
-  /* 5格能量条（仅 intensity） */
   .energy-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 2.5px 7px; border-radius: 5px; border: 1px solid #e2e8f0;
-    background: #f8fafc; font-size: 10.5px; font-weight: 600; color: #475569; flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 6px; border-radius: 5px; border: 1px solid #e2e8f0;
+    background: #ffffff; font-size: 10.5px; font-weight: 600; color: #475569; white-space: nowrap;
   }
   .bars { display: inline-flex; gap: 2px; }
-  .bar { width: 3.5px; height: 9px; border-radius: 1px; background: #e2e8f0; }
+  .bar { width: 3px; height: 9px; border-radius: 1.5px; }
 
-  .v-zh { font-size: 13px; font-weight: 600; color: #1e293b; margin-top: 7px; line-height: 1.45; }
-  .v-en { font-size: 12.8px; line-height: 1.58; color: #334155; margin-top: 6px; }
-  .v-en em.colloc { font-style: italic; color: #64748b; font-weight: 500; }
+  .v-zh { font-size: 12.5px; font-weight: 600; color: #1e293b; margin-bottom: 3px; }
+  .v-en { font-size: 12.5px; line-height: 1.48; color: #475569; }
   .sense-line { margin-top: 3px; }
   .sense-line:first-child { margin-top: 0; }
 
-  /* 底部元数据行 */
+  .v-ex-box {
+    margin-top: 8px; padding: 7px 10px; background: #f8fafc;
+    border-left: 2.5px solid #cbd5e1; border-radius: 0 6px 6px 0;
+    font-size: 12px; line-height: 1.5; color: #475569;
+  }
+  .verb-card.is-pv .v-ex-box { background: #f5f3ff; border-left-color: #c4b5fd; }
+  .v-ex-en { font-style: italic; color: #334155; }
+  .v-ex-en b.hl-v { font-style: normal; font-weight: 700; color: #0f172a; }
+  .v-ex-zh { margin-top: 3px; font-size: 11.5px; color: #64748b; }
+  .ex-dir-tag {
+    display: inline-block; font-style: normal; font-size: 9.5px; font-weight: 800;
+    padding: 0.5px 5px; border-radius: 3.5px; margin-right: 5px; letter-spacing: 0.02em;
+    vertical-align: 0.5px;
+  }
+  .ex-dir-caus { background: #e0e7ff; color: #3730a3; }
+  .ex-dir-auto { background: #ccfbf1; color: #0f766e; }
+  .v-ex-pair-div { margin: 6px 0; border-top: 1px dashed #cbd5e1; }
+
   .v-foot {
     display: flex; justify-content: space-between; align-items: center;
-    padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px;
+    margin-top: 10px; padding-top: 7px; border-top: 1px dashed #f1f5f9;
   }
-  .badges-left { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-  .tier-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.03em; text-transform: uppercase; }
+  .badges-left { display: flex; align-items: center; gap: 5px; }
+  .tier-badge {
+    font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+    padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.03em;
+  }
   .tier-core { background: #dcfce7; color: #15803d; }
   .tier-common { background: #dbeafe; color: #1d4ed8; }
-  .tier-uncommon { background: #fef3c7; color: #b45309; }
+  .tier-uncommon { background: #f1f5f9; color: #475569; }
 
-  .reg-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
-  .reg-formal { background: #f3e8ff; color: #6b21a8; }
-  .reg-neutral { background: #f1f5f9; color: #475569; }
-  .reg-informal { background: #ffedd5; color: #c2410c; }
-  .reg-literary { background: #ecfdf5; color: #047857; }
+  .reg-badge { font-size: 10px; font-weight: 600; padding: 1.5px 6px; border-radius: 4px; }
+  .reg-formal { background: #f1f5f9; color: #334155; }
+  .reg-neutral { background: #f8fafc; color: #64748b; }
+  .reg-informal { background: #fef3c7; color: #92400e; }
+  .reg-literary { background: #f3e8ff; color: #6b21a8; }
 
-  .meta-right { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
-  .zipf-txt { color: #94a3b8; font-size: 11px; }
-  .rank-link { color: #2563eb; text-decoration: none; font-weight: 600; padding: 1px 4px; border-radius: 4px; }
-  .rank-link:hover { background: #eff6ff; text-decoration: underline; }
-  .pv-foot-lbl { color: #94a3b8; font-size: 11px; }
+  .meta-right { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; }
+  .rank-link { color: #2563eb; text-decoration: none; font-weight: 600; }
+  .rank-link:hover { text-decoration: underline; }
+  .pv-foot-lbl { font-size: 10.5px; color: #94a3b8; }
+
+  .sec-more-btn {
+    margin-top: 9px; width: 100%; padding: 6px 12px; border: 1px dashed #cbd5e1;
+    border-radius: 8px; background: #f8fafc; color: #475569; font-size: 12px;
+    font-weight: 600; cursor: pointer; text-align: center;
+  }
+  .sec-more-btn:hover { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
 
   .load-more {
-    align-self: center; padding: 10px 26px; background: #0f172a; color: #fff;
-    border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(15,23,42,0.12);
+    padding: 11px 18px; background: #0f172a; color: #ffffff; border: none;
+    border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; align-self: center;
   }
   .load-more:hover { background: #1e293b; }
 
-  /* 移动端抽屉与响应式适配 */
+  /* 移动端抽屉适配 */
   .mobile-bar { display: none; }
   .drawer-mask { display: none; }
   @media (max-width: 820px) {
@@ -245,74 +291,74 @@
     }
     .mobile-back { font-size: 12px; color: #2563eb; text-decoration: none; font-weight: 600; }
     .main { overflow: visible; }
-    .topbar { padding: 10px 14px; position: static; }
+    .topbar { padding: 10px 14px; }
     .topbar-head { flex-direction: column; align-items: flex-start; gap: 4px; }
-    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; overflow: visible; }
     .ctrl { width: 100%; font-size: 12px; }
-    .search-input { grid-column: 1 / -1; width: 100%; }
-    .reset-btn { grid-column: 1 / -1; width: 100%; }
+    .search-input, .reset-btn { grid-column: 1 / -1; max-width: none; width: 100%; }
     .content { padding: 12px 12px 40px; gap: 14px; overflow: visible; }
-    .group-card { padding: 14px 14px; border-radius: 12px; }
-    .group-title { font-size: 15.5px; }
-    .items-grid { grid-template-columns: 1fr; gap: 10px; }
-    .verb-card { padding: 12px 13px; }
+    .group-card { padding: 14px; border-radius: 12px; }
+    .items-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 <div class="drawer-mask" id="drawerMask" onclick="closeDrawer()"></div>
 <div class="mobile-bar">
-  <button class="menu-toggle" onclick="openDrawer()">☰ <span id="mobileCurrentLbl">Dimensions & Domains</span></button>
+  <button class="menu-toggle" onclick="openDrawer()">☰ <span id="mobileCurrentLbl">1. Synonym Sets</span></button>
   <a class="mobile-back" href="./index.html">← Dictionary</a>
 </div>
 
 <aside class="sidebar">
   <div class="brand">
     <h1>🧭 动词四维语义辨析库</h1>
-    <p id="metaInfo">加载中...</p>
+    <div class="meta-row" id="metaInfo"><span>Loading...</span><a href="./index.html">← Dictionary</a></div>
   </div>
   <div class="mode-list" id="modeList"></div>
-  <div class="dom-header">按语义领域筛选</div>
+  <div class="dom-header">SEMANTIC DOMAINS</div>
   <div class="dom-list" id="domList"></div>
 </aside>
 
 <main class="main">
-  <div class="topbar">
+  <header class="topbar">
     <div class="topbar-head">
       <div class="mode-desc" id="modeDesc"></div>
-      <div class="filter-stat" id="filterStat"></div>
+      <div class="stat-pill" id="statPill"></div>
     </div>
     <div class="filters">
-      <button class="ctrl" id="zhToggle" onclick="toggleZh()">Chinese: OFF</button>
+      <button class="ctrl toggle-btn" id="zhToggle" onclick="toggleZh()">Chinese: OFF</button>
+      <button class="ctrl toggle-btn" id="exToggle" onclick="toggleAllEx()">Examples: OFF</button>
+      <button class="ctrl toggle-btn" id="collapseAllBtn" onclick="toggleCollapseAllGroups()">Collapse All</button>
       <select class="ctrl" id="tierFilter" onchange="resetAndRender()">
-        <option value="ALL">全部词频</option>
-        <option value="core">CORE 核心高频</option>
-        <option value="common">COMMON 常见进阶</option>
-        <option value="uncommon">UNCOMMON 罕见/书面</option>
+        <option value="ALL">All Frequency Tiers</option>
+        <option value="core">Core</option>
+        <option value="common">Common</option>
+        <option value="uncommon">Uncommon</option>
       </select>
       <select class="ctrl" id="regFilter" onchange="resetAndRender()">
-        <option value="ALL">全部语域</option>
-        <option value="formal">Formal 正式书面</option>
-        <option value="neutral">Neutral 通用标准</option>
-        <option value="informal">Informal 口语/非正式</option>
-        <option value="literary">Literary 文学/专业</option>
+        <option value="ALL">All Registers</option>
+        <option value="formal">Formal</option>
+        <option value="neutral">Neutral</option>
+        <option value="informal">Informal</option>
+        <option value="literary">Literary</option>
       </select>
       <select class="ctrl" id="transFilter" onchange="resetAndRender()">
-        <option value="ALL">全部及物性</option>
-        <option value="T">及物 [T]</option>
-        <option value="I">不及物 [I]</option>
-        <option value="I_T">兼及物 [I, T]</option>
+        <option value="ALL">All Syntax Patterns</option>
+        <option value="ergative">Ergative: Sth V ↔ Sb V sth</option>
+        <option value="transitive">Transitive: Sb/Sth V sth (+ prep)</option>
+        <option value="intrans_prep">Intrans + Prep: Sb V + prep + sth</option>
+        <option value="intrans_auto">Autonomous: Sth/Sb V</option>
       </select>
       <select class="ctrl" id="pvFilter" onchange="resetAndRender()">
-        <option value="ALL">全部词条</option>
-        <option value="SINGLE">仅单词动词</option>
-        <option value="PV">仅短语动词</option>
+        <option value="ALL">All Entries (Single + PV)</option>
+        <option value="SINGLE">Single Verbs Only</option>
+        <option value="PV">Phrasal Verbs Only</option>
       </select>
-      <input type="text" class="ctrl search-input" id="kwInput" placeholder="搜索动词、短语或中文..." oninput="resetAndRender()">
-      <button class="reset-btn" id="resetBtn" onclick="clearFilters()">重置筛选</button>
+      <input class="ctrl search-input" id="kwInput" type="text" placeholder="Filter verbs, phrases, or meaning..." oninput="resetAndRender()">
+      <button class="reset-btn" onclick="resetFilters()">Reset</button>
     </div>
-  </div>
-  <div class="content" id="content"></div>
+  </header>
+  <section class="content" id="groupContainer"></section>
 </main>
 
 <script>
@@ -324,44 +370,59 @@ const MODES = [
 ];
 
 const DOM_EN = {
-  manipulation: "Physical Action & Manipulation",
-  physical_action: "Physical Action & Manipulation",
-  motion: "Motion & Spatial Movement",
-  motion_space: "Motion & Spatial Movement",
-  communication: "Communication & Expression",
-  change_state: "Change of State & Quality",
-  bodily_life: "Bodily Action & Life",
-  social_governance: "Social & Power Interaction",
-  cognition: "Cognition & Judgment",
-  creation_destruction: "Creation & Destruction",
-  conflict: "Conflict, Attack & Defense",
-  perception: "Perception & Appearance",
-  transfer_possession: "Transfer & Possession",
-  emotion: "Emotion & Attitude",
-  quantity_degree: "Quantity, Degree & Trend",
-  existence_occurrence: "Existence & Time",
+  manipulation: "Physical Action & Manipulation", physical_action: "Physical Action & Manipulation",
+  motion: "Motion & Spatial Movement", motion_space: "Motion & Spatial Movement",
+  communication: "Communication & Expression", change_state: "Change of State & Quality",
+  bodily_life: "Bodily Action & Life", social_governance: "Social & Power Interaction",
+  cognition: "Cognition & Judgment", creation_destruction: "Creation & Destruction",
+  conflict: "Conflict, Attack & Defense", perception: "Perception & Appearance",
+  transfer_possession: "Transfer & Possession", emotion: "Emotion & Attitude",
+  quantity_degree: "Quantity, Degree & Trend", existence_occurrence: "Existence & Time",
   existence_time: "Existence & Time"
 };
 const DOM_ZH = {
-  manipulation: "物理操作与物体位移",
-  physical_action: "物理操作与物体位移",
-  motion: "位移与空间运动",
-  motion_space: "位移与空间运动",
-  communication: "言语、表达与沟通",
-  change_state: "形态与性质改变",
-  bodily_life: "身体动作与生理生命",
-  social_governance: "社交、合作与权力互动",
-  cognition: "认知、思考与判断",
-  creation_destruction: "创建、建造与销毁",
-  conflict: "冲突、攻击与防御",
-  perception: "感知、观察与显现",
-  transfer_possession: "给予、获取与交易",
-  emotion: "情感、态度与心理变化",
-  quantity_degree: "数量、程度与变化趋势",
-  existence_occurrence: "存在、发生与时间维持",
+  manipulation: "物理操作与物体位移", physical_action: "物理操作与物体位移",
+  motion: "位移与空间运动", motion_space: "位移与空间运动",
+  communication: "言语、表达与沟通", change_state: "形态与性质改变",
+  bodily_life: "身体动作与生理生命", social_governance: "社交、合作与权力互动",
+  cognition: "认知、思考与判断", creation_destruction: "创建、建造与销毁",
+  conflict: "冲突、攻击与防御", perception: "感知、观察与显现",
+  transfer_possession: "给予、获取与交易", emotion: "情感、态度与心理变化",
+  quantity_degree: "数量、程度与变化趋势", existence_occurrence: "存在、发生与时间维持",
   existence_time: "存在、发生与时间维持"
 };
 const domLabel = d => showZh ? (DOM_ZH[d] || d) : (DOM_EN[d] || d);
+
+const VALENCY_META = {
+  ergative: {
+    enTitle: "Ergative / Dual Alternation", zhTitle: "自变 / 致使双用（作格动词）",
+    formula: "Sth V ↔ Sb/Sth V sth",
+    enNote: "Subject can change on its own OR be changed by an external agent.",
+    zhNote: "事物既可自主变化（作主语），也可被外力改变（作直接宾语）。",
+    cls: "tag-val-erg"
+  },
+  transitive: {
+    enTitle: "Direct Transitive (Agent-Driven)", zhTitle: "纯及物致使（直接接宾语）",
+    formula: "Sb/Sth V sth",
+    enNote: "Takes a direct object (some also take a fixed preposition after the object).",
+    zhNote: "直接接名词宾语（部分带固定后置介词搭配）；受事对象不可作主动主语。",
+    cls: "tag-val-tr"
+  },
+  intrans_prep: {
+    enTitle: "Intransitive + Preposition", zhTitle: "不及物 + 介词引出对象",
+    formula: "Sb/Sth V + prep + sth",
+    enNote: "Cannot take a direct noun object; requires a specific preposition right after the verb.",
+    zhNote: "动词后不能直接跟宾语，必须紧接固定介词引出目标对象。",
+    cls: "tag-val-prep"
+  },
+  intrans_auto: {
+    enTitle: "Autonomous Intransitive", zhTitle: "纯自主不及物（内部演变）",
+    formula: "Sth/Sb V",
+    enNote: "Internal or spontaneous process; takes no direct object.",
+    zhNote: "动作在主语自身发生或完结，不接直接宾语。",
+    cls: "tag-val-auto"
+  }
+};
 
 const LV_META = {
   1: { name: "Mild", color: "#10b981" },
@@ -372,17 +433,15 @@ const LV_META = {
 };
 
 let DATA = null;
-let activeMode = "intensity";
+let filteredGroups = [];
+let activeMode = "synonym";
 let activeDom = "ALL";
-let showZh = false;
 let renderLimit = 40;
-
-function formatGroupTitle(raw) {
-  if (!raw) return "";
-  if (showZh) return raw;
-  // 若格式为 "English Title · 中文标题 (Examples)"，在纯英文模式下隐藏 " · 中文标题"
-  return raw.replace(/\s*·\s*[^(\n]+(?=\s*\(|$)/, "").trim();
-}
+let showZh = false;
+let showAllEx = false;
+let expandedSecs = new Set();
+let collapsedGroups = new Set();
+let allGroupsCollapsed = false;
 
 function openDrawer() {
   document.querySelector(".sidebar").classList.add("open");
@@ -393,39 +452,111 @@ function closeDrawer() {
   document.getElementById("drawerMask").classList.remove("open");
 }
 
+function formatGroupTitle(raw) {
+  if (!raw) return "";
+  if (showZh) return raw;
+  return raw.replace(/\s*·\s*[^(\n]+(?=\s*\(|$)/, " ").replace(/\s+\(/, " (").trim();
+}
+
+function formatDefEn(raw) {
+  if (!raw) return "";
+  const parts = raw.split(/\s*(?=\b[1-9]\.\s)/).filter(Boolean);
+  if (parts.length <= 1) return raw;
+  const shown = parts.slice(0, 2);
+  const extra = parts.length - 2;
+  return shown.map(p => `<div class="sense-line">${p.trim()}</div>`).join("") +
+    (extra > 0 ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;">+${extra} more sense${extra > 1 ? 's' : ''}</div>` : "");
+}
+
+function formatExampleEn(ex, lemma, prep = "") {
+  if (!ex) return "";
+  const tokens = lemma.trim().split(/\s+/);
+  const head = tokens[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // 不规则变化常见词根兼容（如 cut/cuts/cutting, shrink/shrank/shrunk, break/broke/broken 等保留原词匹配）
+  const vPat = `\\b(${head}(?:s|es|ed|d|ing)?)\\b`;
+
+  if (tokens.length > 1) {
+    // 短语动词：同时高亮动词与后面紧跟或隔开 1-4 个词的小品词/介词（如 cut down 或 cut costs down）
+    const particles = tokens.slice(1).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+");
+    const rxAdjacent = new RegExp(`${vPat}(\\s+${particles})\\b`, "i");
+    if (rxAdjacent.test(ex)) {
+      return ex.replace(rxAdjacent, '<b class="hl-v">$1$2</b>');
+    }
+    const rxSplit = new RegExp(`${vPat}((?:\\s+\\S+){1,4}?\\s+)(${particles})\\b`, "i");
+    if (rxSplit.test(ex)) {
+      return ex.replace(rxSplit, '<b class="hl-v">$1</b>$2<b class="hl-v">$3</b>');
+    }
+  }
+
+  // 单体动词：先高亮动词本身，如果带有固定介词（如 at / of / from / to），顺带高亮后续首个对应介词
+  let out = ex.replace(new RegExp(vPat, "i"), '<b class="hl-v">$1</b>');
+  if (prep) {
+    const firstPrep = prep.split("/")[0].trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (firstPrep) {
+      const rxPrep = new RegExp(`(<b class="hl-v">.*?<\\/b>(?:\\s+\\S+){0,5}?\\s+)\\b(${firstPrep})\\b`, "i");
+      out = out.replace(rxPrep, '$1<b class="hl-v">$2</b>');
+    }
+  }
+  return out;
+}
+
 function toggleZh() {
   showZh = !showZh;
   const btn = document.getElementById("zhToggle");
   btn.textContent = showZh ? "中文释义：开" : "Chinese: OFF";
   btn.classList.toggle("active-zh", showZh);
+  const exBtn = document.getElementById("exToggle");
+  exBtn.textContent = showZh ? (showAllEx ? "例句：全开" : "例句：折叠") : (showAllEx ? "Examples: ON" : "Examples: OFF");
+  const colBtn = document.getElementById("collapseAllBtn");
+  colBtn.textContent = showZh ? (allGroupsCollapsed ? "展开全部大类" : "收起全部大类") : (allGroupsCollapsed ? "Expand All" : "Collapse All");
   renderSidebar();
   renderGroups();
 }
 
-function clearFilters() {
-  document.getElementById("tierFilter").value = "ALL";
-  document.getElementById("regFilter").value = "ALL";
-  document.getElementById("transFilter").value = "ALL";
-  document.getElementById("pvFilter").value = "ALL";
-  document.getElementById("kwInput").value = "";
-  resetAndRender();
-}
-
-function resetAndRender() {
-  renderLimit = 40;
+function toggleAllEx() {
+  showAllEx = !showAllEx;
+  const btn = document.getElementById("exToggle");
+  btn.textContent = showZh ? (showAllEx ? "例句：全开" : "例句：折叠") : (showAllEx ? "Examples: ON" : "Examples: OFF");
+  btn.classList.toggle("active-zh", showAllEx);
   renderGroups();
 }
 
-function formatDefEn(raw) {
-  if (!raw) return "";
-  // 高亮句首的搭配/语域提示括号，如 (+ sth) 或 (literary)
-  let s = raw.replace(/^(\([^)]+\))/, '<em class="colloc">$1</em>');
-  // 如果包含编号多义项 1. ... 2. ... 3. ...，拆分成微间距行提升可读性
-  if (/\b2\.\s/.test(s)) {
-    const parts = s.split(/(?=\b[2-9]\.\s)/);
-    return parts.map(p => `<div class="sense-line">${p.trim().replace(/^(\d+\.\s*)(\([^)]+\))/, '$1<em class="colloc">$2</em>')}</div>`).join("");
+function toggleCardEx(btn, ev) {
+  if (ev) ev.stopPropagation();
+  const box = btn.closest(".verb-card").querySelector(".v-ex-box");
+  if (!box) return;
+  const isHidden = box.style.display === "none";
+  box.style.display = isHidden ? "block" : "none";
+  btn.classList.toggle("open", isHidden);
+}
+
+function expandSyntaxSec(secId) {
+  expandedSecs.add(secId);
+  renderGroups();
+}
+
+function toggleGroupCollapse(gName, ev) {
+  if (ev) ev.stopPropagation();
+  if (collapsedGroups.has(gName)) {
+    collapsedGroups.delete(gName);
+  } else {
+    collapsedGroups.add(gName);
   }
-  return s;
+  renderGroups();
+}
+
+function toggleCollapseAllGroups() {
+  allGroupsCollapsed = !allGroupsCollapsed;
+  const btn = document.getElementById("collapseAllBtn");
+  btn.textContent = showZh
+    ? (allGroupsCollapsed ? "展开全部大类" : "收起全部大类")
+    : (allGroupsCollapsed ? "Expand All" : "Collapse All");
+  btn.classList.toggle("active-zh", allGroupsCollapsed);
+  collapsedGroups.clear();
+  if (allGroupsCollapsed) {
+    for (const g of filteredGroups) collapsedGroups.add(g.name);
+  }
+  renderGroups();
 }
 
 function renderSidebar() {
@@ -444,7 +575,11 @@ function renderSidebar() {
   document.getElementById("kwInput").placeholder = showZh ? "搜索动词、短语或中文..." : "Filter verbs, phrases, or meaning...";
   document.getElementById("tierFilter").options[0].text = showZh ? "全部词频" : "All Frequency Tiers";
   document.getElementById("regFilter").options[0].text = showZh ? "全部语域" : "All Registers";
-  document.getElementById("transFilter").options[0].text = showZh ? "全部及物性" : "All Transitivity";
+  document.getElementById("transFilter").options[0].text = showZh ? "全部句法结构" : "All Syntax Patterns";
+  document.getElementById("transFilter").options[1].text = showZh ? "自变/致使双用 (Sth V ↔ Sb V sth)" : "Ergative: Sth V ↔ Sb V sth";
+  document.getElementById("transFilter").options[2].text = showZh ? "纯及物外力 (Sb/Sth V sth)" : "Transitive: Sb/Sth V sth (+ prep)";
+  document.getElementById("transFilter").options[3].text = showZh ? "不及物+介词 (Sb V + prep + sth)" : "Intrans + Prep: Sb V + prep + sth";
+  document.getElementById("transFilter").options[4].text = showZh ? "纯自主不及物 (Sth/Sb V)" : "Autonomous: Sth/Sb V";
   document.getElementById("pvFilter").options[0].text = showZh ? "全部词条" : "All Entries (Single + PV)";
   document.getElementById("pvFilter").options[1].text = showZh ? "仅单词动词" : "Single Verbs Only";
   document.getElementById("pvFilter").options[2].text = showZh ? "仅短语动词" : "Phrasal Verbs Only";
@@ -460,8 +595,7 @@ function renderSidebar() {
   let totalInMode = 0;
   for (const g of DATA.groups) {
     if (g.mode !== activeMode || g.items.length < 2) continue;
-    const key = g.domain;
-    domCounts[key] = (domCounts[key] || 0) + g.items.length;
+    domCounts[g.domain] = (domCounts[g.domain] || 0) + g.items.length;
     totalInMode += g.items.length;
   }
   const sortedDoms = Object.entries(domCounts).sort((a, b) => b[1] - a[1]);
@@ -480,6 +614,7 @@ function selectMode(m) {
   activeMode = m;
   activeDom = "ALL";
   renderLimit = 40;
+  expandedSecs.clear();
   closeDrawer();
   renderSidebar();
   renderGroups();
@@ -488,13 +623,33 @@ function selectMode(m) {
 function selectDom(d) {
   activeDom = d;
   renderLimit = 40;
+  expandedSecs.clear();
   closeDrawer();
   renderSidebar();
   renderGroups();
 }
 
+function resetAndRender() {
+  renderLimit = 40;
+  expandedSecs.clear();
+  renderGroups();
+}
+
+function resetFilters() {
+  document.getElementById("tierFilter").value = "ALL";
+  document.getElementById("regFilter").value = "ALL";
+  document.getElementById("transFilter").value = "ALL";
+  document.getElementById("pvFilter").value = "ALL";
+  document.getElementById("kwInput").value = "";
+  activeDom = "ALL";
+  renderLimit = 40;
+  expandedSecs.clear();
+  renderSidebar();
+  renderGroups();
+}
+
 function renderGroups() {
-  const mObj = MODES.find(x => x.id === activeMode);
+  const mObj = MODES.find(m => m.id === activeMode);
   document.getElementById("modeDesc").innerHTML = `${mObj.icon} ${showZh ? mObj.descZh : mObj.descEn}`;
   const mLbl = document.getElementById("mobileCurrentLbl");
   if (mLbl) mLbl.textContent = showZh ? mObj.zh : mObj.en;
@@ -505,74 +660,83 @@ function renderGroups() {
   const pvVal = document.getElementById("pvFilter").value;
   const kw = document.getElementById("kwInput").value.trim().toLowerCase();
 
-  const hasActiveFilter = (tierVal !== "ALL" || regVal !== "ALL" || transVal !== "ALL" || pvVal !== "ALL" || kw !== "");
-  document.getElementById("resetBtn").style.display = hasActiveFilter ? "inline-block" : "none";
-
-  const sortedGroups = [...DATA.groups].sort((a, b) => b.items.length - a.items.length);
-  const filteredGroups = [];
+  filteredGroups = [];
   let totalMatchedWords = 0;
 
-  for (const g of sortedGroups) {
-    if (g.mode !== activeMode) continue;
+  for (const g of DATA.groups) {
+    if (g.mode !== activeMode || g.items.length < 2) continue;
     if (activeDom !== "ALL" && g.domain !== activeDom) continue;
-    if (!kw && g.items.length < 2) continue;
 
+    const groupTitleMatched = kw && g.name.toLowerCase().includes(kw);
     const matchedItems = g.items.filter(it => {
-      const t = (it.tier || "common").toLowerCase();
-      if (tierVal !== "ALL" && t !== tierVal) return false;
+      if (tierVal !== "ALL" && it.tier !== tierVal) return false;
       const reg = (it.register || "neutral").toLowerCase();
       if (regVal !== "ALL" && reg !== regVal) return false;
-      if (transVal !== "ALL" && it.trans !== transVal) return false;
+      const valType = it.valency || (it.trans === "I" ? "intrans_auto" : "transitive");
+      if (transVal !== "ALL") {
+        const matchAutoOpt = (transVal === "intrans_auto" && valType === "intrans_prep" && it.prep_opt);
+        if (valType !== transVal && !matchAutoOpt) return false;
+      }
       const isPv = Boolean(it.is_pv) || it.lemma.includes(" ");
       if (pvVal === "SINGLE" && isPv) return false;
       if (pvVal === "PV" && !isPv) return false;
-      if (kw) {
-        const hay = `${it.lemma} ${it.def_zh || ""} ${it.def_en || ""} ${g.name}`.toLowerCase();
+      if (kw && !groupTitleMatched) {
+        const hay = `${it.lemma} ${it.def_en || ""} ${it.def_zh || ""}`.toLowerCase();
         if (!hay.includes(kw)) return false;
       }
       return true;
     });
 
-    if (matchedItems.length > 0) {
+    if (matchedItems.length >= 2 || (kw && matchedItems.length >= 1)) {
       filteredGroups.push({ ...g, matchedItems });
       totalMatchedWords += matchedItems.length;
     }
   }
 
-  document.getElementById("filterStat").textContent = `当前匹配 ${filteredGroups.length} 组 · ${totalMatchedWords} 词`;
+  document.getElementById("statPill").textContent = showZh
+    ? `当前匹配 ${filteredGroups.length} 组 · ${totalMatchedWords} 词`
+    : `${filteredGroups.length} Frames · ${totalMatchedWords} Verbs`;
 
-  const showLv = (activeMode === "intensity");
-  const container = document.getElementById("content");
-
-  if (filteredGroups.length === 0) {
-    container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:70px 0;font-size:14px;">未找到匹配的动词或语义框架，点击上方「重置筛选」恢复全部显示。</div>`;
+  const container = document.getElementById("groupContainer");
+  if (!filteredGroups.length) {
+    container.innerHTML = `<div style="padding:40px;text-align:center;color:#64748b;">${showZh ? "未找到符合条件的动词框，请放宽筛选条件。" : "No matching verb frames found. Try resetting filters."}</div>`;
     return;
   }
 
-  try {
+  const showLv = activeMode === "intensity";
   const visible = filteredGroups.slice(0, renderLimit);
+
   container.innerHTML = visible.map(g => {
-    const legendHtml = showLv ? `
-      <div class="legend">
-        <span>梯度：</span>
-        <span class="dot" style="background:#10b981"></span>Mild ➔
-        <span class="dot" style="background:#3b82f6"></span>Light ➔
-        <span class="dot" style="background:#eab308"></span>Moderate ➔
-        <span class="dot" style="background:#f97316"></span>Strong ➔
-        <span class="dot" style="background:#ef4444"></span>Extreme
+    const scaleLegend = showLv ? `
+      <div class="scale-legend">
+        <span>${showZh ? "梯度：" : "Scale:"}</span>
+        <span><span class="dot" style="background:#10b981"></span>Mild</span><span>→</span>
+        <span><span class="dot" style="background:#3b82f6"></span>Light</span><span>→</span>
+        <span><span class="dot" style="background:#eab308"></span>Moderate</span><span>→</span>
+        <span><span class="dot" style="background:#f97316"></span>Strong</span><span>→</span>
+        <span><span class="dot" style="background:#ef4444"></span>Extreme</span>
       </div>` : "";
 
-    const frameHtml = (g.summary_en || g.summary_zh) ? `
-      <div class="frame-box">
-        ${g.summary_en ? `<div class="frame-en">${g.summary_en}</div>` : ""}
-        ${(showZh && g.summary_zh) ? `<div class="frame-zh">💡 ${g.summary_zh}</div>` : ""}
-      </div>` : "";
-
-    const cardsHtml = g.matchedItems.map(it => {
+    const renderSingleCard = (it) => {
       const isPv = Boolean(it.is_pv) || it.lemma.includes(" ");
       const lv = Math.max(1, Math.min(5, parseInt(it.intensity || 3, 10)));
       const lvInfo = LV_META[lv];
-      const transDisp = it.trans === "I_T" ? "[I, T]" : `[${it.trans || "I, T"}]`;
+      const valType = it.valency || (it.trans === "I" ? "intrans_auto" : "transitive");
+      const vMeta = VALENCY_META[valType] || VALENCY_META.transitive;
+      let badgeFormula = vMeta.formula;
+      let badgeCls = vMeta.cls;
+      if (valType === "intrans_prep" && it.prep) {
+        badgeFormula = it.prep_opt ? `Sth/Sb V (+ ${it.prep} sth)` : `Sb/Sth V + ${it.prep} sth`;
+      } else if (valType === "transitive" && it.prep) {
+        badgeFormula = `Sb V sth + ${it.prep} sth`;
+        badgeCls = "tag-val-trprep";
+      }
+      const badgeText = showZh
+        ? (valType === "intrans_prep" && it.prep
+            ? (it.prep_opt ? `自主 / + ${it.prep}` : `不及物 + ${it.prep}`)
+            : (valType === "transitive" && it.prep ? `及物 sth + ${it.prep}` : vMeta.zhTitle.split("（")[0]))
+        : badgeFormula;
+
       const tier = (it.tier || "common").toLowerCase();
       const tierClass = tier === "core" ? "tier-core" : (tier === "uncommon" ? "tier-uncommon" : "tier-common");
       const reg = (it.register || "neutral").toLowerCase();
@@ -591,20 +755,47 @@ function renderGroups() {
         ? `<a class="rank-link" href="./index.html?q=${encodeURIComponent(it.headword || it.lemma)}" target="_blank">#${it.rank} ↗</a>`
         : `<span class="pv-foot-lbl">${isPv ? "Phrasal Verb" : ""}</span>`;
 
+      const exBtnHtml = it.ex_en
+        ? `<button class="ex-toggle-btn ${showAllEx ? 'open' : ''}" onclick="toggleCardEx(this, event)" title="Toggle example sentence">Ex ▾</button>`
+        : "";
+
       return `
         <div class="verb-card ${isPv ? 'is-pv' : ''} ${showLv ? 'lv-' + lv : ''}">
           <div>
             <div class="v-top">
               <div class="v-head">
                 <span class="v-lemma">${it.lemma}</span>
-                <span class="tag-trans">${transDisp}</span>
-                ${isPv ? '<span class="tag-pv">短语动词</span>' : ''}
-                ${(!it.is_primary_v && !isPv && it.rank) ? '<span class="tag-poly">兼项</span>' : ''}
+                <span class="tag-trans ${badgeCls}" title="${vMeta.enNote}">${badgeText}</span>
+                ${isPv ? '<span class="tag-pv">PV</span>' : ''}
               </div>
-              ${energyHtml}
+              <div style="display:flex;align-items:center;gap:4px;">
+                ${energyHtml}
+                ${exBtnHtml}
+              </div>
             </div>
             ${(showZh && it.def_zh) ? `<div class="v-zh">${it.def_zh}</div>` : ""}
             <div class="v-en">${formatDefEn(it.def_en)}</div>
+            ${it.ex_en ? (() => {
+              const isErgPair = valType === "ergative" && it.ex2_en;
+              const dir1 = it.ex_dir === "autonomous" ? "auto" : "caus";
+              const dir2 = dir1 === "caus" ? "auto" : "caus";
+              const tag1 = isErgPair
+                ? `<span class="ex-dir-tag ${dir1 === 'caus' ? 'ex-dir-caus' : 'ex-dir-auto'}">${dir1 === 'caus' ? (showZh ? '致使 Sb V sth' : 'Causative') : (showZh ? '自主 Sth V' : 'Autonomous')}</span>`
+                : "";
+              const tag2 = isErgPair
+                ? `<span class="ex-dir-tag ${dir2 === 'caus' ? 'ex-dir-caus' : 'ex-dir-auto'}">${dir2 === 'caus' ? (showZh ? '致使 Sb V sth' : 'Causative') : (showZh ? '自主 Sth V' : 'Autonomous')}</span>`
+                : "";
+              return `
+                <div class="v-ex-box" style="display:${showAllEx ? 'block' : 'none'};">
+                  <div class="v-ex-en">${tag1}“${formatExampleEn(it.ex_en, it.lemma, it.prep)}”</div>
+                  ${(showZh && it.ex_zh) ? `<div class="v-ex-zh">${it.ex_zh}</div>` : ""}
+                  ${isErgPair ? `
+                    <div class="v-ex-pair-div"></div>
+                    <div class="v-ex-en">${tag2}“${formatExampleEn(it.ex2_en, it.lemma, it.prep)}”</div>
+                    ${(showZh && it.ex2_zh) ? `<div class="v-ex-zh">${it.ex2_zh}</div>` : ""}
+                  ` : ""}
+                </div>`;
+            })() : ""}
           </div>
           <div class="v-foot">
             <div class="badges-left">
@@ -618,31 +809,79 @@ function renderGroups() {
           </div>
         </div>
       `;
-    }).join("");
+    };
+
+    let bodyGridHtml = "";
+    if (showLv) {
+      bodyGridHtml = `<div class="items-grid">${g.matchedItems.map(renderSingleCard).join("")}</div>`;
+    } else {
+      const buckets = { ergative: [], transitive: [], intrans_prep: [], intrans_auto: [] };
+      for (const it of g.matchedItems) {
+        const vt = it.valency || (it.trans === "I" ? "intrans_auto" : "transitive");
+        (buckets[vt] || buckets.transitive).push(it);
+      }
+      const activeBuckets = Object.entries(buckets).filter(([, arr]) => arr.length > 0);
+      bodyGridHtml = activeBuckets.map(([vt, arr]) => {
+        const vm = VALENCY_META[vt];
+        const secTitle = showZh ? vm.zhTitle : vm.enTitle;
+        const secNote = showZh ? vm.zhNote : vm.enNote;
+        const secId = `${g.name}::${vt}`;
+        const isExpanded = expandedSecs.has(secId) || kw.length > 0;
+        const CAP = 6;
+        const shownArr = isExpanded ? arr : arr.slice(0, CAP);
+        const hiddenCnt = arr.length - shownArr.length;
+        const moreBtn = hiddenCnt > 0
+          ? `<button class="sec-more-btn" onclick="expandSyntaxSec(${JSON.stringify(secId).replace(/"/g, '&quot;')})">${showZh ? `+ 展开其余 ${hiddenCnt} 个同句法动词` : `+ Show ${hiddenCnt} more verbs in this syntax pattern`}</button>`
+          : "";
+        return `
+          <div class="syntax-sec">
+            <div class="syntax-banner sec-${vt}">
+              <div>
+                <span class="syntax-title">${secTitle} (${arr.length})</span>
+                <span class="syntax-formula">${vm.formula}</span>
+              </div>
+              <div class="syntax-note">${secNote}</div>
+            </div>
+            <div class="items-grid">${shownArr.map(renderSingleCard).join("")}</div>
+            ${moreBtn}
+          </div>
+        `;
+      }).join("");
+    }
+
+    const isGrpCollapsed = allGroupsCollapsed ? !collapsedGroups.has(g.name) : collapsedGroups.has(g.name);
+    const collapseLbl = showZh
+      ? (isGrpCollapsed ? "展开 ▾" : "收起 ▴")
+      : (isGrpCollapsed ? "Expand ▾" : "Collapse ▴");
+    const safeGName = JSON.stringify(g.name).replace(/"/g, "&quot;");
 
     return `
-      <section class="group-card">
-        <div class="group-head">
-          <div class="group-title-wrap">
-            <h2 class="group-title">${formatGroupTitle(g.name)}</h2>
-            <span class="group-count-pill">${g.matchedItems.length} 词</span>
-            <span class="group-dom-tag">${domLabel(g.domain)}</span>
+      <section class="group-card ${isGrpCollapsed ? 'is-collapsed' : ''}">
+        <div class="group-header" onclick="toggleGroupCollapse(${safeGName}, event)">
+          <div style="flex:1;min-width:0;">
+            <div class="group-title-row">
+              <h2 class="group-title">${formatGroupTitle(g.name)}</h2>
+              <span class="group-count">${g.matchedItems.length} ${showZh ? '词' : 'verbs'}</span>
+              <span class="group-domain">${domLabel(g.domain)}</span>
+            </div>
+            ${(!isGrpCollapsed && scaleLegend) ? scaleLegend : ""}
           </div>
-          ${legendHtml}
+          <button class="grp-collapse-btn" onclick="toggleGroupCollapse(${safeGName}, event)">${collapseLbl}</button>
         </div>
-        ${frameHtml}
-        <div class="items-grid">${cardsHtml}</div>
+        <div class="group-body">
+          ${g.desc_en ? `<div class="group-desc-en">${g.desc_en}</div>` : ""}
+          ${(showZh && g.desc_zh) ? `<div class="group-desc-zh">${g.desc_zh}</div>` : ""}
+          ${bodyGridHtml}
+        </div>
       </section>
     `;
   }).join("");
 
   if (filteredGroups.length > renderLimit) {
-    const moreTxt = showZh ? `加载更多框架组（剩余 ${filteredGroups.length - renderLimit} 组）` : `Load More Frames (${filteredGroups.length - renderLimit} remaining)`;
+    const moreTxt = showZh
+      ? `加载更多框架组（剩余 ${filteredGroups.length - renderLimit} 组）`
+      : `Load More Frames (${filteredGroups.length - renderLimit} remaining)`;
     container.innerHTML += `<button class="load-more" onclick="renderLimit += 40; renderGroups();">${moreTxt}</button>`;
-  }
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = `<div style="padding:24px;color:#dc2626;background:#fef2f2;border-radius:8px;">渲染异常: ${err.message}</div>`;
   }
 }
 
@@ -652,6 +891,9 @@ fetch("./verb_taxonomy_v2.json")
     DATA = d;
     renderSidebar();
     renderGroups();
+  })
+  .catch(err => {
+    document.getElementById("groupContainer").innerHTML = `<div style="padding:40px;text-align:center;color:#dc2626;">加载失败: ${err}</div>`;
   });
 </script>
 </body>
