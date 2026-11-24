@@ -3,222 +3,368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>动词四维语义辨析库 (Native Frames & Phrasal Verbs)</title>
+<title>动词四维语义辨析库 · Native Verb Taxonomy Lab</title>
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #0f172a; display: flex; min-height: 100vh; }
-  aside { width: 280px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; }
-  .side-head { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; }
-  .side-head h2 { margin: 0 0 4px; font-size: 16px; }
-  .side-head p { margin: 0; font-size: 12px; color: #64748b; }
-  .mode-nav { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 4px; }
-  .mode-btn { padding: 9px 11px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; border: 1px solid transparent; background: transparent; text-align: left; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #0f172a; display: flex; height: 100vh; overflow: hidden; }
+  
+  /* 左侧边栏 */
+  .sidebar { width: 270px; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+  .brand { padding: 16px 18px; border-bottom: 1px solid #f1f5f9; }
+  .brand h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; color: #0f172a; }
+  .brand p { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .brand a { color: #2563eb; text-decoration: none; }
+  .brand a:hover { text-decoration: underline; }
+
+  .mode-list { padding: 12px 10px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #f1f5f9; }
+  .mode-btn { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 8px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #334155; text-align: left; transition: all 0.15s; }
   .mode-btn:hover { background: #f1f5f9; }
-  .mode-btn.active { background: #0f172a; color: #fff; font-weight: 600; }
-  .mode-btn .cnt { font-size: 11px; background: #e2e8f0; color: #475569; padding: 1px 7px; border-radius: 999px; }
-  .mode-btn.active .cnt { background: #334155; color: #f8fafc; }
-  .dom-filter-list { flex: 1; overflow-y: auto; padding: 8px; }
-  .dom-sub-title { font-size: 11px; font-weight: 700; color: #94a3b8; padding: 4px 10px; text-transform: uppercase; }
-  .dom-item { padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; color: #334155; }
-  .dom-item:hover { background: #f1f5f9; }
-  .dom-item.active { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
-  main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .topbar { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
-  .mode-desc { font-size: 13px; color: #334155; font-weight: 500; }
-  .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .filters select, .filters input { padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
-  .filters input { width: 190px; }
-  .content { padding: 16px 20px; }
-  .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px 17px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-  .group-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .group-title-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .group-title { font-weight: 700; font-size: 15.5px; color: #0f172a; }
-  .dom-tag { font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 7px; border-radius: 5px; }
-  .summary-box { background: #f8fafc; border-left: 3px solid #2563eb; padding: 8px 12px; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
-  .summary-en { font-size: 12.8px; color: #1e293b; line-height: 1.5; font-weight: 500; }
-  .summary-zh { font-size: 12px; color: #0369a1; margin-top: 3px; }
-  .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 10px; }
-  .v-chip { border: 1px solid #e2e8f0; border-radius: 9px; padding: 10px 12px; background: #fff; display: flex; flex-direction: column; gap: 5px; }
-  .v-chip.is-pv { border-color: #ddd6fe; background: #faf5ff; }
-  .v-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-  .v-word { font-weight: 700; font-size: 15px; color: #0f172a; cursor: pointer; }
-  .v-word:hover { color: #2563eb; text-decoration: underline; }
-  .tr-badge { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
-  .tr-T { background: #dbeafe; color: #1e40af; }
-  .tr-I { background: #fce7f3; color: #9d174d; }
-  .tr-I_T { background: #e0e7ff; color: #3730a3; }
-  .pv-badge { font-size: 10px; background: #7c3aed; color: #fff; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
-  .lv { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
-  .lv-1 { background: #dcfce7; color: #166534; }
-  .lv-2 { background: #e0f2fe; color: #075985; }
-  .lv-3 { background: #fef9c3; color: #854d0e; }
-  .lv-4 { background: #ffedd5; color: #9a3412; }
-  .lv-5 { background: #fee2e2; color: #991b1b; }
-  .sec-badge { font-size: 10px; background: #f1f5f9; color: #475569; padding: 1px 5px; border-radius: 4px; }
-  .v-zh { font-size: 13px; color: #0f172a; font-weight: 500; }
-  .v-en { font-size: 12px; color: #475569; line-height: 1.45; }
-  .v-foot { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: auto; padding-top: 3px; }
-  .v-foot a { color: #2563eb; text-decoration: none; }
-  @media (max-width: 760px) {
-    body { flex-direction: column; }
-    aside { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid #e2e8f0; }
-    .dom-filter-list { display: none; }
-  }
+  .mode-btn.active { background: #0f172a; color: #ffffff; }
+  .mode-badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #e2e8f0; color: #475569; font-weight: 600; }
+  .mode-btn.active .mode-badge { background: rgba(255,255,255,0.2); color: #ffffff; }
+
+  .dom-header { padding: 12px 18px 6px; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.04em; }
+  .dom-list { padding: 0 10px 20px; display: flex; flex-direction: column; gap: 2px; }
+  .dom-btn { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 12.5px; color: #475569; text-align: left; }
+  .dom-btn:hover { background: #f1f5f9; color: #0f172a; }
+  .dom-btn.active { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+  .dom-count { font-size: 11.5px; color: #94a3b8; }
+  .dom-btn.active .dom-count { color: #2563eb; }
+
+  /* 右侧主区 */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .mode-desc { font-size: 13px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ctrl { height: 32px; padding: 0 11px; border: 1px solid #cbd5e1; border-radius: 7px; background: #ffffff; font-size: 12.5px; color: #1e293b; outline: none; cursor: pointer; }
+  .ctrl:hover { border-color: #94a3b8; }
+  .ctrl.active-zh { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; font-weight: 600; }
+  .search-input { width: 220px; cursor: text; }
+  .search-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px 48px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* 语义框架组卡片 */
+  .group-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(15,23,42,0.03); }
+  .group-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .group-title-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .group-title { font-size: 16.5px; font-weight: 700; color: #0f172a; }
+  .group-dom-tag { font-size: 11.5px; padding: 2px 8px; border-radius: 5px; background: #f1f5f9; color: #475569; font-weight: 500; }
+
+  /* 梯度图例（仅 intensity 显示） */
+  .legend { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 999px; border: 1px solid #e2e8f0; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* 英文母语框架概述框 */
+  .frame-box { background: #f8fafc; border-left: 3.5px solid #2563eb; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 16px; }
+  .frame-en { font-size: 13.5px; line-height: 1.55; color: #1e293b; font-weight: 500; }
+  .frame-zh { font-size: 12px; color: #2563eb; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+
+  /* 词条网格 */
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .verb-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 9px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; position: relative; transition: transform 0.12s, box-shadow 0.12s; }
+  .verb-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,23,42,0.06); }
+  .verb-card.is-pv { background: #faf8ff; border-color: #e9d5ff; }
+
+  /* 梯度左边框色条（仅 intensity 模式加 class） */
+  .verb-card.lv-1 { border-left: 4px solid #10b981; }
+  .verb-card.lv-2 { border-left: 4px solid #3b82f6; }
+  .verb-card.lv-3 { border-left: 4px solid #eab308; }
+  .verb-card.lv-4 { border-left: 4px solid #f97316; }
+  .verb-card.lv-5 { border-left: 4px solid #ef4444; }
+
+  .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+  .v-head { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .v-lemma { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .tag-trans { font-size: 10.5px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: #e0e7ff; color: #3730a3; }
+  .tag-pv { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #7c3aed; color: #ffffff; }
+  .tag-poly { font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: #f1f5f9; color: #64748b; }
+
+  /* 5格能量条（仅 intensity 显示） */
+  .energy-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 5px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 10.5px; font-weight: 600; color: #475569; flex-shrink: 0; }
+  .bars { display: inline-flex; gap: 2px; }
+  .bar { width: 3.5px; height: 9px; border-radius: 1px; background: #e2e8f0; }
+
+  .v-zh { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .v-en { font-size: 12.5px; line-height: 1.5; color: #475569; }
+
+  .v-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed #f1f5f9; font-size: 11px; }
+  .tier-wrap { display: flex; align-items: center; gap: 6px; }
+  .tier-badge { font-size: 10px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.03em; text-transform: uppercase; }
+  .tier-core { background: #dcfce7; color: #15803d; }
+  .tier-common { background: #dbeafe; color: #1d4ed8; }
+  .tier-uncommon { background: #fef3c7; color: #b45309; }
+  .zipf-txt { color: #94a3b8; }
+  .rank-link { color: #2563eb; text-decoration: none; font-weight: 600; }
+  .rank-link:hover { text-decoration: underline; }
+  .pv-foot-lbl { color: #94a3b8; }
+
+  .load-more { align-self: center; padding: 9px 22px; background: #0f172a; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .load-more:hover { background: #1e293b; }
 </style>
 </head>
 <body>
-<aside>
-  <div class="side-head">
-    <h2>🧭 动词四维语义辨析库</h2>
-    <p id="metaInfo">加载中... · <a href="./index.html" style="color:#2563eb;">返回主词典</a></p>
+
+<aside class="sidebar">
+  <div class="brand">
+    <h1>🧭 动词四维语义辨析库</h1>
+    <p id="metaInfo">加载中... · <a href="./index.html">返回主词典</a></p>
   </div>
-  <div class="mode-nav" id="modeNav"></div>
-  <div class="dom-filter-list" id="domList"></div>
+  <div class="mode-list" id="modeList"></div>
+  <div class="dom-header">按语义领域筛选</div>
+  <div class="dom-list" id="domList"></div>
 </aside>
-<main>
+
+<main class="main">
   <div class="topbar">
     <div class="mode-desc" id="modeDesc"></div>
     <div class="filters">
-      <select id="trFilter">
+      <button class="ctrl" id="zhToggle" onclick="toggleZh()">中文释义：关</button>
+      <select class="ctrl" id="tierFilter" onchange="resetAndRender()">
+        <option value="ALL">全部词频 (Core / Common / Uncommon)</option>
+        <option value="core">CORE 核心高频</option>
+        <option value="common">COMMON 常见进阶</option>
+        <option value="uncommon">UNCOMMON 罕见/书面</option>
+      </select>
+      <select class="ctrl" id="transFilter" onchange="resetAndRender()">
         <option value="ALL">全部及物性 ([T] / [I] / [I, T])</option>
-        <option value="T">仅看 [T] 及物</option>
-        <option value="I">仅看 [I] 不及物</option>
-        <option value="I_T">仅看 [I, T] 两用</option>
+        <option value="T">仅及物 [T]</option>
+        <option value="I">仅不及物 [I]</option>
+        <option value="I_T">兼及物/不及物 [I, T]</option>
       </select>
-      <select id="posScope">
+      <select class="ctrl" id="pvFilter" onchange="resetAndRender()">
         <option value="ALL">全部词条 (单词 + 短语动词)</option>
-        <option value="PV_ONLY">仅看短语动词 (Phrasal Verbs)</option>
-        <option value="PRIMARY">仅主词性 v.</option>
-        <option value="SECONDARY">仅兼项非罕见 v.</option>
+        <option value="SINGLE">仅看单词动词 (Single Verbs)</option>
+        <option value="PV">仅看短语动词 (Phrasal Verbs)</option>
       </select>
-      <input id="kwInput" placeholder="搜索动词、短语或中文..." />
+      <input type="text" class="ctrl search-input" id="kwInput" placeholder="搜索动词、短语或中文..." oninput="resetAndRender()">
     </div>
   </div>
   <div class="content" id="content"></div>
 </main>
+
 <script>
 const MODES = [
-  { id: "synonym", icon: "🔁", name: "1. 同义替换组", desc: "母语级同义语义框架（如 Attest/Vouch vs Substantiate/Corroborate），附英文核心辨析" },
-  { id: "intensity", icon: "📈", name: "2. 情感/强弱梯度组", desc: "相近动作按情感色彩与力度从轻到重排列（Lv.1 轻/缓 ➔ Lv.5 重/烈）" },
-  { id: "manner", icon: "🎭", name: "3. 动作神态/方式细分组", desc: "同一基础动作的不同神态与方式区分（如 smile/grin/laugh，glance/gaze/glare）" },
-  { id: "scenario", icon: "🎬", name: "4. 主题场景聚合组", desc: "同一生活、学术或专业场景下成套出现的动作与短语动词归纳" }
+  { id: "synonym", label: "1. 同义替换组", icon: "🔄", desc: "核心概念相同、可按语域与搭配互换的近义动词辨析组" },
+  { id: "intensity", label: "2. 情感/强弱梯度组", icon: "📈", desc: "相近动作按情感色彩与力度从轻到重排列（Mild ➔ Light ➔ Moderate ➔ Strong ➔ Extreme）" },
+  { id: "manner", label: "3. 动作神态/方式细分组", icon: "🎭", desc: "同一基础动作的不同神态、姿态与执行方式区分（如 smile / grin / smirk，glance / gaze / glare）" },
+  { id: "scenario", label: "4. 主题场景聚合组", icon: "🎬", desc: "同一高频生活、职场或社会场景下的核心动词与短语动词网络" }
 ];
 
-let DATA = null, activeMode = "synonym", activeDom = "ALL";
+const LV_META = {
+  1: { name: "Mild", color: "#10b981" },
+  2: { name: "Light", color: "#3b82f6" },
+  3: { name: "Moderate", color: "#eab308" },
+  4: { name: "Strong", color: "#f97316" },
+  5: { name: "Extreme", color: "#ef4444" }
+};
 
-function speak(w) {
-  new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(w)}&type=2`).play().catch(() => {});
+let DATA = null;
+let activeMode = "intensity";
+let activeDom = "ALL";
+let showZh = false;
+let renderLimit = 40;
+
+function toggleZh() {
+  showZh = !showZh;
+  const btn = document.getElementById("zhToggle");
+  btn.textContent = showZh ? "中文释义：开" : "中文释义：关";
+  btn.classList.toggle("active-zh", showZh);
+  renderGroups();
+}
+
+function resetAndRender() {
+  renderLimit = 40;
+  renderGroups();
 }
 
 function renderSidebar() {
-  const counts = DATA.meta.mode_counts || {};
-  document.getElementById("modeNav").innerHTML = MODES.map(m => `
-    <button class="mode-btn ${m.id === activeMode ? "active" : ""}" onclick="setMode('${m.id}')">
-      <span>${m.icon} ${m.name}</span>
-      <span class="cnt">${counts[m.id] || 0}</span>
+  const counts = { synonym: 0, intensity: 0, manner: 0, scenario: 0 };
+  let validGroups = 0;
+  for (const g of DATA.groups) {
+    if (g.items.length < 2) continue;
+    validGroups++;
+    counts[g.mode] = (counts[g.mode] || 0) + g.items.length;
+  }
+  document.getElementById("metaInfo").innerHTML = `共 ${validGroups} 个母语框架组 · <a href="./index.html">返回主词典</a>`;
+
+  const modeEl = document.getElementById("modeList");
+  modeEl.innerHTML = MODES.map(m => `
+    <button class="mode-btn ${m.id === activeMode ? 'active' : ''}" onclick="selectMode('${m.id}')">
+      <span>${m.icon} ${m.label}</span>
+      <span class="mode-badge">${counts[m.id] || 0}</span>
     </button>
   `).join("");
 
   const domCounts = {};
+  let totalInMode = 0;
   for (const g of DATA.groups) {
-    if (g.mode !== activeMode) continue;
-    domCounts[g.domain] = (domCounts[g.domain] || 0) + g.count;
+    if (g.mode !== activeMode || g.items.length < 2) continue;
+    domCounts[g.domain] = (domCounts[g.domain] || 0) + g.items.length;
+    totalInMode += g.items.length;
   }
-  const domNames = {};
-  DATA.groups.forEach(g => domNames[g.domain] = g.domain_name);
-
-  let domHtml = `<div class="dom-sub-title">按语义领域筛选</div>
-    <div class="dom-item ${activeDom === "ALL" ? "active" : ""}" onclick="setDom('ALL')"><span>全部领域</span><span>${counts[activeMode] || 0}</span></div>`;
-  for (const [did, cnt] of Object.entries(domCounts).sort((a, b) => b[1] - a[1])) {
-    domHtml += `<div class="dom-item ${activeDom === did ? "active" : ""}" onclick="setDom('${did}')"><span>${domNames[did]}</span><span>${cnt}</span></div>`;
-  }
-  document.getElementById("domList").innerHTML = domHtml;
+  const sortedDoms = Object.entries(domCounts).sort((a, b) => b[1] - a[1]);
+  const domEl = document.getElementById("domList");
+  domEl.innerHTML = `
+    <button class="dom-btn ${activeDom === 'ALL' ? 'active' : ''}" onclick="selectDom('ALL')">
+      <span>全部领域</span><span class="dom-count">${totalInMode}</span>
+    </button>
+  ` + sortedDoms.map(([d, c]) => `
+    <button class="dom-btn ${activeDom === d ? 'active' : ''}" onclick="selectDom('${d}')">
+      <span>${d}</span><span class="dom-count">${c}</span>
+    </button>
+  `).join("");
 }
 
-function setMode(m) { activeMode = m; activeDom = "ALL"; renderSidebar(); renderMain(); }
-function setDom(d) { activeDom = d; renderSidebar(); renderMain(); }
+function selectMode(m) {
+  activeMode = m;
+  activeDom = "ALL";
+  renderLimit = 40;
+  renderSidebar();
+  renderGroups();
+}
 
-function renderMain() {
-  const modeObj = MODES.find(m => m.id === activeMode);
-  document.getElementById("modeDesc").textContent = `${modeObj.icon} ${modeObj.desc}`;
+function selectDom(d) {
+  activeDom = d;
+  renderLimit = 40;
+  renderSidebar();
+  renderGroups();
+}
 
-  const trF = document.getElementById("trFilter").value;
-  const scope = document.getElementById("posScope").value;
+function renderGroups() {
+  const mObj = MODES.find(x => x.id === activeMode);
+  document.getElementById("modeDesc").innerHTML = `${mObj.icon} ${mObj.desc}`;
+
+  const tierVal = document.getElementById("tierFilter").value;
+  const transVal = document.getElementById("transFilter").value;
+  const pvVal = document.getElementById("pvFilter").value;
   const kw = document.getElementById("kwInput").value.trim().toLowerCase();
 
-  let html = "";
-  for (const g of DATA.groups) {
+  const sortedGroups = [...DATA.groups].sort((a, b) => b.items.length - a.items.length);
+  const filteredGroups = [];
+
+  for (const g of sortedGroups) {
     if (g.mode !== activeMode) continue;
     if (activeDom !== "ALL" && g.domain !== activeDom) continue;
+    if (!kw && g.items.length < 2) continue;
 
-    const groupMatch = kw && (g.name.toLowerCase().includes(kw) || (g.summary_en || "").toLowerCase().includes(kw) || (g.summary_zh || "").toLowerCase().includes(kw));
-    const items = g.items.filter(it => {
-      if (trF !== "ALL" && it.trans !== trF) return false;
-      if (scope === "PV_ONLY" && !it.is_pv) return false;
-      if (scope === "PRIMARY" && (!it.is_primary_v || it.is_pv)) return false;
-      if (scope === "SECONDARY" && (it.is_primary_v || it.is_pv)) return false;
-      if (kw && !groupMatch && !it.lemma.toLowerCase().includes(kw) && !(it.def_zh || "").includes(kw) && !(it.def_en || "").toLowerCase().includes(kw)) return false;
+    const matchedItems = g.items.filter(it => {
+      const t = (it.tier || "common").toLowerCase();
+      if (tierVal !== "ALL" && t !== tierVal) return false;
+      if (transVal !== "ALL" && it.trans !== transVal) return false;
+      const isPv = Boolean(it.is_pv) || it.lemma.includes(" ");
+      if (pvVal === "SINGLE" && isPv) return false;
+      if (pvVal === "PV" && !isPv) return false;
+      if (kw) {
+        const hay = `${it.lemma} ${it.def_zh || ""} ${it.def_en || ""} ${g.name}`.toLowerCase();
+        if (!hay.includes(kw)) return false;
+      }
       return true;
     });
-    if (!items.length) continue;
 
-    const chips = items.map(it => {
-      const trLabel = it.trans === "I_T" ? "[I, T]" : `[${it.trans}]`;
-      const showLv = (g.mode === "intensity" || g.mode === "manner");
+    if (matchedItems.length > 0) {
+      filteredGroups.push({ ...g, matchedItems });
+    }
+  }
+
+  const showLv = (activeMode === "intensity");
+  const container = document.getElementById("content");
+
+  if (filteredGroups.length === 0) {
+    container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:60px 0;">未找到匹配的动词或语义框架，请尝试放宽筛选条件。</div>`;
+    return;
+  }
+
+  const visible = filteredGroups.slice(0, renderLimit);
+  container.innerHTML = visible.map(g => {
+    const legendHtml = showLv ? `
+      <div class="legend">
+        <span>梯度顺序：</span>
+        <span class="dot" style="background:#10b981"></span>Mild ➔
+        <span class="dot" style="background:#3b82f6"></span>Light ➔
+        <span class="dot" style="background:#eab308"></span>Moderate ➔
+        <span class="dot" style="background:#f97316"></span>Strong ➔
+        <span class="dot" style="background:#ef4444"></span>Extreme
+      </div>` : "";
+
+    const frameHtml = (g.summary_en || g.summary_zh) ? `
+      <div class="frame-box">
+        ${g.summary_en ? `<div class="frame-en">${g.summary_en}</div>` : ""}
+        ${(showZh && g.summary_zh) ? `<div class="frame-zh">💡 ${g.summary_zh}</div>` : ""}
+      </div>` : "";
+
+    const cardsHtml = g.matchedItems.map(it => {
+      const isPv = Boolean(it.is_pv) || it.lemma.includes(" ");
+      const lv = Math.max(1, Math.min(5, parseInt(it.intensity || 3, 10)));
+      const lvInfo = LV_META[lv];
+      const transDisp = it.trans === "I_T" ? "[I, T]" : `[${it.trans || "I, T"}]`;
+      const tier = (it.tier || "common").toLowerCase();
+      const tierClass = tier === "core" ? "tier-core" : (tier === "uncommon" ? "tier-uncommon" : "tier-common");
+
+      const energyHtml = showLv ? `
+        <div class="energy-pill">
+          <span class="bars">
+            ${[1,2,3,4,5].map(i => `<span class="bar" style="background:${i <= lv ? lvInfo.color : '#e2e8f0'}"></span>`).join("")}
+          </span>
+          <span>${lvInfo.name}</span>
+        </div>` : "";
+
+      const footRight = it.rank
+        ? `<a class="rank-link" href="./index.html?q=${encodeURIComponent(it.headword || it.lemma)}" target="_blank">#${it.rank} ↗</a>`
+        : `<span class="pv-foot-lbl">${isPv ? "Phrasal Verb" : ""}</span>`;
+
       return `
-        <div class="v-chip ${it.is_pv ? "is-pv" : ""}">
-          <div class="v-top">
-            <span class="v-word" title="点击发音" onclick="speak('${it.lemma}')">${it.lemma}</span>
-            <span class="tr-badge tr-${it.trans}">${trLabel}</span>
-            ${it.is_pv ? `<span class="pv-badge">短语动词</span>` : ""}
-            ${showLv ? `<span class="lv lv-${it.intensity}">Lv.${it.intensity}</span>` : ""}
-            ${(!it.is_primary_v && !it.is_pv) ? `<span class="sec-badge">兼项</span>` : ""}
+        <div class="verb-card ${isPv ? 'is-pv' : ''} ${showLv ? 'lv-' + lv : ''}">
+          <div>
+            <div class="v-top">
+              <div class="v-head">
+                <span class="v-lemma">${it.lemma}</span>
+                <span class="tag-trans">${transDisp}</span>
+                ${isPv ? '<span class="tag-pv">短语动词</span>' : ''}
+                ${(!it.is_primary_v && !isPv && it.rank) ? '<span class="tag-poly">兼项</span>' : ''}
+              </div>
+              ${energyHtml}
+            </div>
+            ${(showZh && it.def_zh) ? `<div class="v-zh" style="margin-top:6px;">${it.def_zh}</div>` : ""}
+            <div class="v-en" style="margin-top:5px;">${it.def_en || ""}</div>
           </div>
-          <div class="v-zh">${it.def_zh || ""}</div>
-          <div class="v-en">${it.def_en || ""}</div>
           <div class="v-foot">
-            <span>${it.zipf ? "Zipf " + it.zipf : (it.is_pv ? "Phrasal Verb" : "补充核心词")}</span>
-            ${it.rank ? `<a href="./index.html#${encodeURIComponent(it.headword)}" target="_blank">#${it.rank} ↗</a>` : `<span></span>`}
+            <div class="tier-wrap">
+              <span class="tier-badge ${tierClass}">${tier}</span>
+              ${it.zipf ? `<span class="zipf-txt">Zipf ${it.zipf}</span>` : ""}
+            </div>
+            ${footRight}
           </div>
         </div>
       `;
     }).join("");
 
-    const sumEn = g.summary_en || "";
-    const sumZh = g.summary_zh || g.tip || "";
-
-    html += `
-      <div class="group-card">
+    return `
+      <section class="group-card">
         <div class="group-head">
           <div class="group-title-wrap">
-            <span class="group-title">${g.name}（${items.length} 词）</span>
-            <span class="dom-tag">${g.domain_name}</span>
+            <h2 class="group-title">${g.name} (${g.matchedItems.length} 词)</h2>
+            <span class="group-dom-tag">${g.domain}</span>
           </div>
+          ${legendHtml}
         </div>
-        ${(sumEn || sumZh) ? `
-          <div class="summary-box">
-            ${sumEn ? `<div class="summary-en">${sumEn}</div>` : ""}
-            ${sumZh ? `<div class="summary-zh">💡 ${sumZh}</div>` : ""}
-          </div>
-        ` : ""}
-        <div class="word-grid">${chips}</div>
-      </div>
+        ${frameHtml}
+        <div class="items-grid">${cardsHtml}</div>
+      </section>
     `;
+  }).join("");
+
+  if (filteredGroups.length > renderLimit) {
+    container.innerHTML += `<button class="load-more" onclick="renderLimit += 40; renderGroups();">加载更多框架组（剩余 ${filteredGroups.length - renderLimit} 组）</button>`;
   }
-  document.getElementById("content").innerHTML = html || '<div style="color:#94a3b8;padding:30px;text-align:center;">当前筛选条件下无匹配词组</div>';
 }
 
-document.getElementById("trFilter").onchange = renderMain;
-document.getElementById("posScope").onchange = renderMain;
-document.getElementById("kwInput").oninput = renderMain;
-
-fetch("./verb_taxonomy_v2.json?t=" + Date.now())
+fetch("./verb_taxonomy_v2.json")
   .then(r => r.json())
   .then(d => {
     DATA = d;
-    document.getElementById("metaInfo").innerHTML = `共 ${d.meta.total_groups} 个母语框架组 · <a href="./index.html" style="color:#2563eb;">返回主词典</a>`;
     renderSidebar();
-    renderMain();
+    renderGroups();
   });
 </script>
 </body>
