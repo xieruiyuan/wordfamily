@@ -6,100 +6,216 @@
 <title>动词四维语义辨析库 · Native Verb Taxonomy Lab</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #0f172a; display: flex; height: 100vh; overflow: hidden; }
-  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", Roboto, sans-serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
   /* 左侧边栏 */
-  .sidebar { width: 270px; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
-  .brand { padding: 16px 18px; border-bottom: 1px solid #f1f5f9; }
-  .brand h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; color: #0f172a; }
-  .brand p { font-size: 12px; color: #64748b; margin-top: 4px; }
-  .brand a { color: #2563eb; text-decoration: none; }
+  .sidebar {
+    width: 268px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .brand { padding: 18px 20px 14px; border-bottom: 1px solid #f1f5f9; }
+  .brand h1 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 7px; color: #0f172a; letter-spacing: -0.01em; }
+  .brand p { font-size: 12px; color: #64748b; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
+  .brand a { color: #2563eb; text-decoration: none; font-weight: 600; }
   .brand a:hover { text-decoration: underline; }
 
-  .mode-list { padding: 12px 10px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #f1f5f9; }
-  .mode-btn { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 8px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #334155; text-align: left; transition: all 0.15s; }
-  .mode-btn:hover { background: #f1f5f9; }
-  .mode-btn.active { background: #0f172a; color: #ffffff; }
-  .mode-badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #e2e8f0; color: #475569; font-weight: 600; }
-  .mode-btn.active .mode-badge { background: rgba(255,255,255,0.2); color: #ffffff; }
+  .mode-list { padding: 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #f1f5f9; }
+  .mode-btn {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 12px; border-radius: 8px; border: 1px solid transparent;
+    background: transparent; cursor: pointer; font-size: 13px; font-weight: 600;
+    color: #334155; text-align: left; transition: all 0.15s ease;
+  }
+  .mode-btn:hover { background: #f8fafc; color: #0f172a; }
+  .mode-btn.active { background: #0f172a; color: #ffffff; box-shadow: 0 2px 6px rgba(15,23,42,0.12); }
+  .mode-badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #f1f5f9; color: #475569; font-weight: 600; }
+  .mode-btn.active .mode-badge { background: rgba(255,255,255,0.18); color: #ffffff; }
 
-  .dom-header { padding: 12px 18px 6px; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.04em; }
-  .dom-list { padding: 0 10px 20px; display: flex; flex-direction: column; gap: 2px; }
-  .dom-btn { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 12.5px; color: #475569; text-align: left; }
-  .dom-btn:hover { background: #f1f5f9; color: #0f172a; }
+  .dom-header { padding: 14px 20px 8px; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; }
+  .dom-list { padding: 0 12px 24px; display: flex; flex-direction: column; gap: 2px; }
+  .dom-btn {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 12px; border-radius: 7px; border: none; background: transparent;
+    cursor: pointer; font-size: 12.5px; color: #475569; text-align: left; transition: background 0.12s;
+  }
+  .dom-btn:hover { background: #f8fafc; color: #0f172a; }
   .dom-btn.active { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
-  .dom-count { font-size: 11.5px; color: #94a3b8; }
+  .dom-count { font-size: 11.5px; color: #94a3b8; font-variant-numeric: tabular-nums; }
   .dom-btn.active .dom-count { color: #2563eb; }
 
   /* 右侧主区 */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .topbar {
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    z-index: 10;
+  }
+  .topbar-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   .mode-desc { font-size: 13px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .filter-stat { font-size: 12px; color: #64748b; }
+
   .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .ctrl { height: 32px; padding: 0 11px; border: 1px solid #cbd5e1; border-radius: 7px; background: #ffffff; font-size: 12.5px; color: #1e293b; outline: none; cursor: pointer; }
+  .ctrl {
+    height: 32px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 7px;
+    background: #ffffff; font-size: 12.5px; color: #1e293b; outline: none; cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
   .ctrl:hover { border-color: #94a3b8; }
+  .ctrl:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
   .ctrl.active-zh { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; font-weight: 600; }
-  .search-input { width: 220px; cursor: text; }
-  .search-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+  .search-input { width: 210px; cursor: text; }
+  .reset-btn {
+    height: 32px; padding: 0 10px; border: 1px solid #fecaca; border-radius: 7px;
+    background: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 600; cursor: pointer;
+    display: none;
+  }
+  .reset-btn:hover { background: #fee2e2; }
 
-  .content { flex: 1; overflow-y: auto; padding: 20px 24px 48px; display: flex; flex-direction: column; gap: 20px; }
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 26px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
 
-  /* 语义框架组卡片 */
-  .group-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(15,23,42,0.03); }
-  .group-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-  .group-title-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .group-title { font-size: 16.5px; font-weight: 700; color: #0f172a; }
-  .group-dom-tag { font-size: 11.5px; padding: 2px 8px; border-radius: 5px; background: #f1f5f9; color: #475569; font-weight: 500; }
+  /* 语义框架大卡片 */
+  .group-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.03), 0 4px 14px rgba(15,23,42,0.02);
+  }
+  .group-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+  }
+  .group-title-wrap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .group-title { font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; line-height: 1.35; }
+  .group-count-pill { font-size: 12px; font-weight: 600; color: #475569; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; }
+  .group-dom-tag { font-size: 11.5px; padding: 2.5px 9px; border-radius: 6px; background: #eff6ff; color: #1d4ed8; font-weight: 600; }
 
   /* 梯度图例（仅 intensity 显示） */
-  .legend { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 999px; border: 1px solid #e2e8f0; }
+  .legend {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #475569;
+    background: #f8fafc; padding: 4px 11px; border-radius: 999px; border: 1px solid #e2e8f0;
+  }
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
-  /* 英文母语框架概述框 */
-  .frame-box { background: #f8fafc; border-left: 3.5px solid #2563eb; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 16px; }
-  .frame-en { font-size: 13.5px; line-height: 1.55; color: #1e293b; font-weight: 500; }
-  .frame-zh { font-size: 12px; color: #2563eb; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+  /* 母语英文框架框 */
+  .frame-box {
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2563eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+  }
+  .frame-en { font-size: 13.5px; line-height: 1.65; color: #1e293b; font-weight: 500; }
+  .frame-zh { font-size: 12.5px; line-height: 1.5; color: #2563eb; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
 
-  /* 词条网格 */
-  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-  .verb-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 9px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; position: relative; transition: transform 0.12s, box-shadow 0.12s; }
-  .verb-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,23,42,0.06); }
-  .verb-card.is-pv { background: #faf8ff; border-color: #e9d5ff; }
+  /* 动词卡片网格 */
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(305px, 1fr));
+    gap: 14px;
+  }
+  .verb-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+  }
+  .verb-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15,23,42,0.06);
+    border-color: #cbd5e1;
+  }
+  .verb-card.is-pv { background: #fcfaff; border-color: #ede9fe; }
+  .verb-card.is-pv:hover { border-color: #d8b4fe; }
 
-  /* 梯度左边框色条（仅 intensity 模式加 class） */
+  /* 梯度左边框色条（仅 intensity） */
   .verb-card.lv-1 { border-left: 4px solid #10b981; }
   .verb-card.lv-2 { border-left: 4px solid #3b82f6; }
   .verb-card.lv-3 { border-left: 4px solid #eab308; }
   .verb-card.lv-4 { border-left: 4px solid #f97316; }
   .verb-card.lv-5 { border-left: 4px solid #ef4444; }
 
-  .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
-  .v-head { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-  .v-lemma { font-size: 16px; font-weight: 700; color: #0f172a; }
-  .tag-trans { font-size: 10.5px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: #e0e7ff; color: #3730a3; }
-  .tag-pv { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #7c3aed; color: #ffffff; }
-  .tag-poly { font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: #f1f5f9; color: #64748b; }
+  .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .v-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .v-lemma { font-size: 17px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; }
+  .tag-trans { font-size: 10.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; background: #eef2ff; color: #4338ca; }
+  .tag-pv { font-size: 10.5px; font-weight: 600; padding: 1.5px 6px; border-radius: 4px; background: #7c3aed; color: #ffffff; }
+  .tag-poly { font-size: 10.5px; padding: 1.5px 5px; border-radius: 4px; background: #f1f5f9; color: #64748b; }
 
-  /* 5格能量条（仅 intensity 显示） */
-  .energy-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 5px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 10.5px; font-weight: 600; color: #475569; flex-shrink: 0; }
+  /* 5格能量条（仅 intensity） */
+  .energy-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2.5px 7px; border-radius: 5px; border: 1px solid #e2e8f0;
+    background: #f8fafc; font-size: 10.5px; font-weight: 600; color: #475569; flex-shrink: 0;
+  }
   .bars { display: inline-flex; gap: 2px; }
   .bar { width: 3.5px; height: 9px; border-radius: 1px; background: #e2e8f0; }
 
-  .v-zh { font-size: 13px; font-weight: 600; color: #1e293b; }
-  .v-en { font-size: 12.5px; line-height: 1.5; color: #475569; }
+  .v-zh { font-size: 13px; font-weight: 600; color: #1e293b; margin-top: 7px; line-height: 1.45; }
+  .v-en { font-size: 12.8px; line-height: 1.58; color: #334155; margin-top: 6px; }
+  .v-en em.colloc { font-style: italic; color: #64748b; font-weight: 500; }
+  .sense-line { margin-top: 3px; }
+  .sense-line:first-child { margin-top: 0; }
 
-  .v-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed #f1f5f9; font-size: 11px; }
-  .tier-wrap { display: flex; align-items: center; gap: 6px; }
-  .tier-badge { font-size: 10px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.03em; text-transform: uppercase; }
+  /* 底部元数据行 */
+  .v-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px;
+  }
+  .badges-left { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .tier-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.03em; text-transform: uppercase; }
   .tier-core { background: #dcfce7; color: #15803d; }
   .tier-common { background: #dbeafe; color: #1d4ed8; }
   .tier-uncommon { background: #fef3c7; color: #b45309; }
-  .zipf-txt { color: #94a3b8; }
-  .rank-link { color: #2563eb; text-decoration: none; font-weight: 600; }
-  .rank-link:hover { text-decoration: underline; }
-  .pv-foot-lbl { color: #94a3b8; }
 
-  .load-more { align-self: center; padding: 9px 22px; background: #0f172a; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .reg-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+  .reg-formal { background: #f3e8ff; color: #6b21a8; }
+  .reg-neutral { background: #f1f5f9; color: #475569; }
+  .reg-informal { background: #ffedd5; color: #c2410c; }
+  .reg-literary { background: #ecfdf5; color: #047857; }
+
+  .meta-right { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+  .zipf-txt { color: #94a3b8; font-size: 11px; }
+  .rank-link { color: #2563eb; text-decoration: none; font-weight: 600; padding: 1px 4px; border-radius: 4px; }
+  .rank-link:hover { background: #eff6ff; text-decoration: underline; }
+  .pv-foot-lbl { color: #94a3b8; font-size: 11px; }
+
+  .load-more {
+    align-self: center; padding: 10px 26px; background: #0f172a; color: #fff;
+    border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.12);
+  }
   .load-more:hover { background: #1e293b; }
 </style>
 </head>
@@ -108,7 +224,7 @@
 <aside class="sidebar">
   <div class="brand">
     <h1>🧭 动词四维语义辨析库</h1>
-    <p id="metaInfo">加载中... · <a href="./index.html">返回主词典</a></p>
+    <p id="metaInfo">加载中...</p>
   </div>
   <div class="mode-list" id="modeList"></div>
   <div class="dom-header">按语义领域筛选</div>
@@ -117,27 +233,38 @@
 
 <main class="main">
   <div class="topbar">
-    <div class="mode-desc" id="modeDesc"></div>
+    <div class="topbar-head">
+      <div class="mode-desc" id="modeDesc"></div>
+      <div class="filter-stat" id="filterStat"></div>
+    </div>
     <div class="filters">
-      <button class="ctrl" id="zhToggle" onclick="toggleZh()">中文释义：关</button>
+      <button class="ctrl" id="zhToggle" onclick="toggleZh()">Chinese: OFF</button>
       <select class="ctrl" id="tierFilter" onchange="resetAndRender()">
-        <option value="ALL">全部词频 (Core / Common / Uncommon)</option>
+        <option value="ALL">全部词频</option>
         <option value="core">CORE 核心高频</option>
         <option value="common">COMMON 常见进阶</option>
         <option value="uncommon">UNCOMMON 罕见/书面</option>
       </select>
+      <select class="ctrl" id="regFilter" onchange="resetAndRender()">
+        <option value="ALL">全部语域</option>
+        <option value="formal">Formal 正式书面</option>
+        <option value="neutral">Neutral 通用标准</option>
+        <option value="informal">Informal 口语/非正式</option>
+        <option value="literary">Literary 文学/专业</option>
+      </select>
       <select class="ctrl" id="transFilter" onchange="resetAndRender()">
-        <option value="ALL">全部及物性 ([T] / [I] / [I, T])</option>
-        <option value="T">仅及物 [T]</option>
-        <option value="I">仅不及物 [I]</option>
-        <option value="I_T">兼及物/不及物 [I, T]</option>
+        <option value="ALL">全部及物性</option>
+        <option value="T">及物 [T]</option>
+        <option value="I">不及物 [I]</option>
+        <option value="I_T">兼及物 [I, T]</option>
       </select>
       <select class="ctrl" id="pvFilter" onchange="resetAndRender()">
-        <option value="ALL">全部词条 (单词 + 短语动词)</option>
-        <option value="SINGLE">仅看单词动词 (Single Verbs)</option>
-        <option value="PV">仅看短语动词 (Phrasal Verbs)</option>
+        <option value="ALL">全部词条</option>
+        <option value="SINGLE">仅单词动词</option>
+        <option value="PV">仅短语动词</option>
       </select>
       <input type="text" class="ctrl search-input" id="kwInput" placeholder="搜索动词、短语或中文..." oninput="resetAndRender()">
+      <button class="reset-btn" id="resetBtn" onclick="clearFilters()">重置筛选</button>
     </div>
   </div>
   <div class="content" id="content"></div>
@@ -145,11 +272,51 @@
 
 <script>
 const MODES = [
-  { id: "synonym", label: "1. 同义替换组", icon: "🔄", desc: "核心概念相同、可按语域与搭配互换的近义动词辨析组" },
-  { id: "intensity", label: "2. 情感/强弱梯度组", icon: "📈", desc: "相近动作按情感色彩与力度从轻到重排列（Mild ➔ Light ➔ Moderate ➔ Strong ➔ Extreme）" },
-  { id: "manner", label: "3. 动作神态/方式细分组", icon: "🎭", desc: "同一基础动作的不同神态、姿态与执行方式区分（如 smile / grin / smirk，glance / gaze / glare）" },
-  { id: "scenario", label: "4. 主题场景聚合组", icon: "🎬", desc: "同一高频生活、职场或社会场景下的核心动词与短语动词网络" }
+  { id: "synonym", en: "1. Synonym Sets", zh: "1. 同义替换组", icon: "🔄", descEn: "Verbs sharing a core concept, distinguished by register, nuance, and collocation", descZh: "核心概念相同、可按语域与搭配互换的近义动词辨析组" },
+  { id: "intensity", en: "2. Intensity Scales", zh: "2. 情感/强弱梯度组", icon: "📈", descEn: "Related verbs ordered by emotional charge and force (Mild ➔ Light ➔ Moderate ➔ Strong ➔ Extreme)", descZh: "相近动作按情感色彩与力度从轻到重排列（Mild ➔ Light ➔ Moderate ➔ Strong ➔ Extreme）" },
+  { id: "manner", en: "3. Manner & Nuance", zh: "3. 动作神态/方式细分组", icon: "🎭", descEn: "Distinct physical manners, postures, or ways of performing a base action (e.g., glance / gaze / glare)", descZh: "同一基础动作的不同神态、姿态与执行方式区分（如 smile / grin / smirk，glance / gaze / glare）" },
+  { id: "scenario", en: "4. Thematic Frames", zh: "4. 主题场景聚合组", icon: "🎬", descEn: "Core verbs and phrasal verbs clustered around real-world situations and domains", descZh: "同一高频生活、职场或社会场景下的核心动词与短语动词网络" }
 ];
+
+const DOM_EN = {
+  manipulation: "Physical Action & Manipulation",
+  physical_action: "Physical Action & Manipulation",
+  motion: "Motion & Spatial Movement",
+  motion_space: "Motion & Spatial Movement",
+  communication: "Communication & Expression",
+  change_state: "Change of State & Quality",
+  bodily_life: "Bodily Action & Life",
+  social_governance: "Social & Power Interaction",
+  cognition: "Cognition & Judgment",
+  creation_destruction: "Creation & Destruction",
+  conflict: "Conflict, Attack & Defense",
+  perception: "Perception & Appearance",
+  transfer_possession: "Transfer & Possession",
+  emotion: "Emotion & Attitude",
+  quantity_degree: "Quantity, Degree & Trend",
+  existence_occurrence: "Existence & Time",
+  existence_time: "Existence & Time"
+};
+const DOM_ZH = {
+  manipulation: "物理操作与物体位移",
+  physical_action: "物理操作与物体位移",
+  motion: "位移与空间运动",
+  motion_space: "位移与空间运动",
+  communication: "言语、表达与沟通",
+  change_state: "形态与性质改变",
+  bodily_life: "身体动作与生理生命",
+  social_governance: "社交、合作与权力互动",
+  cognition: "认知、思考与判断",
+  creation_destruction: "创建、建造与销毁",
+  conflict: "冲突、攻击与防御",
+  perception: "感知、观察与显现",
+  transfer_possession: "给予、获取与交易",
+  emotion: "情感、态度与心理变化",
+  quantity_degree: "数量、程度与变化趋势",
+  existence_occurrence: "存在、发生与时间维持",
+  existence_time: "存在、发生与时间维持"
+};
+const domLabel = d => showZh ? (DOM_ZH[d] || d) : (DOM_EN[d] || d);
 
 const LV_META = {
   1: { name: "Mild", color: "#10b981" },
@@ -165,17 +332,46 @@ let activeDom = "ALL";
 let showZh = false;
 let renderLimit = 40;
 
+function formatGroupTitle(raw) {
+  if (!raw) return "";
+  if (showZh) return raw;
+  // 若格式为 "English Title · 中文标题 (Examples)"，在纯英文模式下隐藏 " · 中文标题"
+  return raw.replace(/\s*·\s*[^(\n]+(?=\s*\(|$)/, "").trim();
+}
+
 function toggleZh() {
   showZh = !showZh;
   const btn = document.getElementById("zhToggle");
-  btn.textContent = showZh ? "中文释义：开" : "中文释义：关";
+  btn.textContent = showZh ? "中文释义：开" : "Chinese: OFF";
   btn.classList.toggle("active-zh", showZh);
+  renderSidebar();
   renderGroups();
+}
+
+function clearFilters() {
+  document.getElementById("tierFilter").value = "ALL";
+  document.getElementById("regFilter").value = "ALL";
+  document.getElementById("transFilter").value = "ALL";
+  document.getElementById("pvFilter").value = "ALL";
+  document.getElementById("kwInput").value = "";
+  resetAndRender();
 }
 
 function resetAndRender() {
   renderLimit = 40;
   renderGroups();
+}
+
+function formatDefEn(raw) {
+  if (!raw) return "";
+  // 高亮句首的搭配/语域提示括号，如 (+ sth) 或 (literary)
+  let s = raw.replace(/^(\([^)]+\))/, '<em class="colloc">$1</em>');
+  // 如果包含编号多义项 1. ... 2. ... 3. ...，拆分成微间距行提升可读性
+  if (/\b2\.\s/.test(s)) {
+    const parts = s.split(/(?=\b[2-9]\.\s)/);
+    return parts.map(p => `<div class="sense-line">${p.trim().replace(/^(\d+\.\s*)(\([^)]+\))/, '$1<em class="colloc">$2</em>')}</div>`).join("");
+  }
+  return s;
 }
 
 function renderSidebar() {
@@ -186,12 +382,22 @@ function renderSidebar() {
     validGroups++;
     counts[g.mode] = (counts[g.mode] || 0) + g.items.length;
   }
-  document.getElementById("metaInfo").innerHTML = `共 ${validGroups} 个母语框架组 · <a href="./index.html">返回主词典</a>`;
+  document.getElementById("metaInfo").innerHTML = showZh
+    ? `<span>共 ${validGroups} 个母语框架组</span><a href="./index.html">← 返回主词典</a>`
+    : `<span>${validGroups} Semantic Frames</span><a href="./index.html">← Dictionary</a>`;
 
-  const modeEl = document.getElementById("modeList");
-  modeEl.innerHTML = MODES.map(m => `
+  document.querySelector(".dom-header").textContent = showZh ? "按语义领域筛选" : "SEMANTIC DOMAINS";
+  document.getElementById("kwInput").placeholder = showZh ? "搜索动词、短语或中文..." : "Filter verbs, phrases, or meaning...";
+  document.getElementById("tierFilter").options[0].text = showZh ? "全部词频" : "All Frequency Tiers";
+  document.getElementById("regFilter").options[0].text = showZh ? "全部语域" : "All Registers";
+  document.getElementById("transFilter").options[0].text = showZh ? "全部及物性" : "All Transitivity";
+  document.getElementById("pvFilter").options[0].text = showZh ? "全部词条" : "All Entries (Single + PV)";
+  document.getElementById("pvFilter").options[1].text = showZh ? "仅单词动词" : "Single Verbs Only";
+  document.getElementById("pvFilter").options[2].text = showZh ? "仅短语动词" : "Phrasal Verbs Only";
+
+  document.getElementById("modeList").innerHTML = MODES.map(m => `
     <button class="mode-btn ${m.id === activeMode ? 'active' : ''}" onclick="selectMode('${m.id}')">
-      <span>${m.icon} ${m.label}</span>
+      <span>${m.icon} ${showZh ? m.zh : m.en}</span>
       <span class="mode-badge">${counts[m.id] || 0}</span>
     </button>
   `).join("");
@@ -200,18 +406,18 @@ function renderSidebar() {
   let totalInMode = 0;
   for (const g of DATA.groups) {
     if (g.mode !== activeMode || g.items.length < 2) continue;
-    domCounts[g.domain] = (domCounts[g.domain] || 0) + g.items.length;
+    const key = g.domain;
+    domCounts[key] = (domCounts[key] || 0) + g.items.length;
     totalInMode += g.items.length;
   }
   const sortedDoms = Object.entries(domCounts).sort((a, b) => b[1] - a[1]);
-  const domEl = document.getElementById("domList");
-  domEl.innerHTML = `
+  document.getElementById("domList").innerHTML = `
     <button class="dom-btn ${activeDom === 'ALL' ? 'active' : ''}" onclick="selectDom('ALL')">
-      <span>全部领域</span><span class="dom-count">${totalInMode}</span>
+      <span>${showZh ? '全部领域' : 'All Semantic Domains'}</span><span class="dom-count">${totalInMode}</span>
     </button>
-  ` + sortedDoms.map(([d, c]) => `
-    <button class="dom-btn ${activeDom === d ? 'active' : ''}" onclick="selectDom('${d}')">
-      <span>${d}</span><span class="dom-count">${c}</span>
+  ` + sortedDoms.map(([key, c]) => `
+    <button class="dom-btn ${activeDom === key ? 'active' : ''}" onclick="selectDom('${key}')">
+      <span>${domLabel(key)}</span><span class="dom-count">${c}</span>
     </button>
   `).join("");
 }
@@ -233,15 +439,20 @@ function selectDom(d) {
 
 function renderGroups() {
   const mObj = MODES.find(x => x.id === activeMode);
-  document.getElementById("modeDesc").innerHTML = `${mObj.icon} ${mObj.desc}`;
+  document.getElementById("modeDesc").innerHTML = `${mObj.icon} ${showZh ? mObj.descZh : mObj.descEn}`;
 
   const tierVal = document.getElementById("tierFilter").value;
+  const regVal = document.getElementById("regFilter").value;
   const transVal = document.getElementById("transFilter").value;
   const pvVal = document.getElementById("pvFilter").value;
   const kw = document.getElementById("kwInput").value.trim().toLowerCase();
 
+  const hasActiveFilter = (tierVal !== "ALL" || regVal !== "ALL" || transVal !== "ALL" || pvVal !== "ALL" || kw !== "");
+  document.getElementById("resetBtn").style.display = hasActiveFilter ? "inline-block" : "none";
+
   const sortedGroups = [...DATA.groups].sort((a, b) => b.items.length - a.items.length);
   const filteredGroups = [];
+  let totalMatchedWords = 0;
 
   for (const g of sortedGroups) {
     if (g.mode !== activeMode) continue;
@@ -251,6 +462,8 @@ function renderGroups() {
     const matchedItems = g.items.filter(it => {
       const t = (it.tier || "common").toLowerCase();
       if (tierVal !== "ALL" && t !== tierVal) return false;
+      const reg = (it.register || "neutral").toLowerCase();
+      if (regVal !== "ALL" && reg !== regVal) return false;
       if (transVal !== "ALL" && it.trans !== transVal) return false;
       const isPv = Boolean(it.is_pv) || it.lemma.includes(" ");
       if (pvVal === "SINGLE" && isPv) return false;
@@ -264,22 +477,26 @@ function renderGroups() {
 
     if (matchedItems.length > 0) {
       filteredGroups.push({ ...g, matchedItems });
+      totalMatchedWords += matchedItems.length;
     }
   }
+
+  document.getElementById("filterStat").textContent = `当前匹配 ${filteredGroups.length} 组 · ${totalMatchedWords} 词`;
 
   const showLv = (activeMode === "intensity");
   const container = document.getElementById("content");
 
   if (filteredGroups.length === 0) {
-    container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:60px 0;">未找到匹配的动词或语义框架，请尝试放宽筛选条件。</div>`;
+    container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:70px 0;font-size:14px;">未找到匹配的动词或语义框架，点击上方「重置筛选」恢复全部显示。</div>`;
     return;
   }
 
+  try {
   const visible = filteredGroups.slice(0, renderLimit);
   container.innerHTML = visible.map(g => {
     const legendHtml = showLv ? `
       <div class="legend">
-        <span>梯度顺序：</span>
+        <span>梯度：</span>
         <span class="dot" style="background:#10b981"></span>Mild ➔
         <span class="dot" style="background:#3b82f6"></span>Light ➔
         <span class="dot" style="background:#eab308"></span>Moderate ➔
@@ -300,6 +517,9 @@ function renderGroups() {
       const transDisp = it.trans === "I_T" ? "[I, T]" : `[${it.trans || "I, T"}]`;
       const tier = (it.tier || "common").toLowerCase();
       const tierClass = tier === "core" ? "tier-core" : (tier === "uncommon" ? "tier-uncommon" : "tier-common");
+      const reg = (it.register || "neutral").toLowerCase();
+      const regMapLabel = { formal: "Formal", neutral: "Neutral", informal: "Informal", literary: "Literary" };
+      const regLabel = regMapLabel[reg] || "Neutral";
 
       const energyHtml = showLv ? `
         <div class="energy-pill">
@@ -325,15 +545,18 @@ function renderGroups() {
               </div>
               ${energyHtml}
             </div>
-            ${(showZh && it.def_zh) ? `<div class="v-zh" style="margin-top:6px;">${it.def_zh}</div>` : ""}
-            <div class="v-en" style="margin-top:5px;">${it.def_en || ""}</div>
+            ${(showZh && it.def_zh) ? `<div class="v-zh">${it.def_zh}</div>` : ""}
+            <div class="v-en">${formatDefEn(it.def_en)}</div>
           </div>
           <div class="v-foot">
-            <div class="tier-wrap">
+            <div class="badges-left">
               <span class="tier-badge ${tierClass}">${tier}</span>
-              ${it.zipf ? `<span class="zipf-txt">Zipf ${it.zipf}</span>` : ""}
+              <span class="reg-badge reg-${reg}">${regLabel}</span>
             </div>
-            ${footRight}
+            <div class="meta-right">
+              ${it.zipf ? `<span class="zipf-txt">Zipf ${it.zipf}</span>` : ""}
+              ${footRight}
+            </div>
           </div>
         </div>
       `;
@@ -343,8 +566,9 @@ function renderGroups() {
       <section class="group-card">
         <div class="group-head">
           <div class="group-title-wrap">
-            <h2 class="group-title">${g.name} (${g.matchedItems.length} 词)</h2>
-            <span class="group-dom-tag">${g.domain}</span>
+            <h2 class="group-title">${formatGroupTitle(g.name)}</h2>
+            <span class="group-count-pill">${g.matchedItems.length} 词</span>
+            <span class="group-dom-tag">${domLabel(g.domain)}</span>
           </div>
           ${legendHtml}
         </div>
@@ -355,7 +579,12 @@ function renderGroups() {
   }).join("");
 
   if (filteredGroups.length > renderLimit) {
-    container.innerHTML += `<button class="load-more" onclick="renderLimit += 40; renderGroups();">加载更多框架组（剩余 ${filteredGroups.length - renderLimit} 组）</button>`;
+    const moreTxt = showZh ? `加载更多框架组（剩余 ${filteredGroups.length - renderLimit} 组）` : `Load More Frames (${filteredGroups.length - renderLimit} remaining)`;
+    container.innerHTML += `<button class="load-more" onclick="renderLimit += 40; renderGroups();">${moreTxt}</button>`;
+  }
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<div style="padding:24px;color:#dc2626;background:#fef2f2;border-radius:8px;">渲染异常: ${err.message}</div>`;
   }
 }
 
