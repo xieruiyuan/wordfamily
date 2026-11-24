@@ -93,6 +93,10 @@ const VISUAL_SUB_HINTS = {
   clothing_textiles: "clothing",
   architecture_home: "",
   transport_vehicles: "vehicle",
+  geography_weather: "",
+  medical_care: "",
+  industry_logistics: "",
+  sports_fitness: "sport",
   arts_music: ""
 };
 
@@ -632,7 +636,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     const data = await famResp.json();
     initData(data, "已自动加载");
-    ensureTopicTaxonomyLoaded();
+    if (new URLSearchParams(window.location.search).get("mode") === "topic") {
+      await setSidebarMode("topic");
+    } else {
+      ensureTopicTaxonomyLoaded();
+    }
   } catch (err) {
     document.getElementById("loadStatus").textContent = "自动加载受限，请选本地文件";
     document.getElementById("mainView").innerHTML = `
@@ -703,12 +711,71 @@ function toggleGroup(groupId) {
   openState.set(groupId, !willCollapse);
 }
 
+function registerVirtualTopicCompounds(taxonomy) {
+  let nextRank = 30001;
+  const byWord = new Map();
+  let added = 0;
+
+  for (const cat of taxonomy) {
+    for (const sub of (cat.subcategories || [])) {
+      for (const it of (sub.items || [])) {
+        if (!it || (it.rank && familyByRank.has(it.rank))) continue;
+        const w = (it.word || "").trim();
+        if (!w) continue;
+        const key = w.toLowerCase();
+        let fam = byWord.get(key);
+        if (!fam) {
+          const cleanNote = (it.note || "").replace(/^名[:：]\s*/, "").trim();
+          fam = {
+            rank: nextRank++,
+            headword: w,
+            primary_pos: "n.",
+            total_freq: 0.0001,
+            _virtualTopic: true,
+            pos_branches: [
+              {
+                pos: "n.",
+                lemmas: [
+                  {
+                    lemma: w,
+                    tier: "common",
+                    zipf: 4.5,
+                    inflections: { base: [w] },
+                    def_zh: cleanNote || "复合名词",
+                    def_en: `Compound noun (${sub.name})`,
+                    examples: [],
+                    phonetic: ""
+                  }
+                ]
+              }
+            ],
+            family_guide: {
+              root_logic: `主题扩展复合名词 · 归属「${cat.name} / ${sub.name}」场景高频表达。`,
+              core_distinction: ""
+            },
+            phonetic: ""
+          };
+          byWord.set(key, fam);
+          allFamilies.push(fam);
+          familyByRank.set(fam.rank, fam);
+          added++;
+        }
+        it.rank = fam.rank;
+      }
+    }
+  }
+  if (added > 0 && sidebarMode === "topic") {
+    applyFilters();
+  }
+}
+
 async function ensureTopicTaxonomyLoaded() {
   if (topicTaxonomy.length) return topicTaxonomy;
   try {
     const resp = await fetch(TOPIC_URL);
     if (resp.ok) {
       topicTaxonomy = (await resp.json()) || [];
+      registerVirtualTopicCompounds(topicTaxonomy);
       buildVisualHintsFromTaxonomy(topicTaxonomy);
     }
   } catch (e) {
@@ -723,7 +790,36 @@ async function setSidebarMode(mode) {
   document.querySelectorAll(".view-mode-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
   });
-  if (mode === "topic") {
+  document.querySelectorAll("#unifiedTopNav [data-nav]").forEach(btn => {
+    const active = btn.dataset.nav === mode;
+    btn.style.background = active ? "#2563eb" : "#ffffff";
+    btn.style.color = active ? "#ffffff" : "#334155";
+    btn.style.borderColor = active ? "#2563eb" : "#cbd5e1";
+  });
+
+  const isTopic = (mode === "topic");
+  const posBar = document.getElementById("posFilterBar");
+  if (posBar) {
+    posBar.querySelectorAll(".pos-chip").forEach(chip => {
+      if (chip.classList.contains("topic-only-chip")) {
+        chip.style.display = isTopic ? "" : "none";
+        return;
+      }
+      const p = chip.dataset.pos;
+      if (p !== "ALL" && p !== "FAV") {
+        chip.style.display = isTopic ? "none" : "";
+      }
+    });
+  }
+  const secToggle = document.querySelector(".secondary-pos-toggle");
+  if (secToggle) {
+    secToggle.style.display = isTopic ? "none" : "";
+  }
+  if (isTopic && typeof currentPosFilter !== "undefined" && currentPosFilter !== "ALL" && currentPosFilter !== "FAV") {
+    if (typeof setPosFilter === "function") setPosFilter("ALL");
+  }
+
+  if (isTopic) {
     document.getElementById("familyList").innerHTML = '<div style="padding:20px;color:#64748b;font-size:13px;text-align:center;">正在加载语义主题分类树...</div>';
     await ensureTopicTaxonomyLoaded();
   }
@@ -739,8 +835,7 @@ function selectTopicFamily(rank, subId, customImg = '') {
     for (const sub of (cat.subcategories || [])) {
       if (`topic-sub-${cat.id}-${sub.id}` === subId) {
         const baseSet = new Set(getBaseFilteredFamilies().map(f => f.rank));
-        const list = (sub.items || [])
-          .filter(it => baseSet.has(it.rank))
+        const list = getSortedTopicItems(sub.items, baseSet)
           .map(it => familyByRank.get(it.rank))
           .filter(Boolean);
         if (list.length) currentFilteredList = list;
@@ -766,6 +861,47 @@ function clearSearchBox() {
   applyFilters();
 }
 
+let topicCompoundFirst = true;
+let topicCompoundOnly = false;
+
+function getSortedTopicItems(items, allowedRanksSet) {
+  let list = (items || []).filter(it => allowedRanksSet.has(it.rank));
+  if (topicCompoundOnly) {
+    list = list.filter(it => it.rank >= 30000);
+  } else if (topicCompoundFirst) {
+    const compounds = [];
+    const normals = [];
+    for (const it of list) {
+      if (it.rank >= 30000) compounds.push(it);
+      else normals.push(it);
+    }
+    list = compounds.concat(normals);
+  }
+  return list;
+}
+
+window.toggleCompoundTop = function() {
+  topicCompoundFirst = !topicCompoundFirst;
+  const btn = document.getElementById("compoundTopBtn");
+  if (btn) {
+    btn.style.background = topicCompoundFirst ? "#eff6ff" : "";
+    btn.style.color = topicCompoundFirst ? "#1d4ed8" : "";
+    btn.style.borderColor = topicCompoundFirst ? "#93c5fd" : "";
+  }
+  applyFilters();
+};
+
+window.toggleCompoundOnly = function() {
+  topicCompoundOnly = !topicCompoundOnly;
+  const btn = document.getElementById("compoundOnlyBtn");
+  if (btn) {
+    btn.style.background = topicCompoundOnly ? "#2563eb" : "";
+    btn.style.color = topicCompoundOnly ? "#ffffff" : "";
+    btn.style.borderColor = topicCompoundOnly ? "#2563eb" : "";
+  }
+  applyFilters();
+};
+
 function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
   const container = document.getElementById("familyList");
   if (!topicTaxonomy.length) {
@@ -783,7 +919,7 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
     let catTotal = 0;
 
     (cat.subcategories || []).forEach((sub, sIdx) => {
-      const matchedItems = (sub.items || []).filter(it => allowedRanksSet.has(it.rank));
+      const matchedItems = getSortedTopicItems(sub.items, allowedRanksSet);
       if (!matchedItems.length) return;
       catTotal += matchedItems.length;
       matchedItems.forEach(it => {
@@ -843,8 +979,7 @@ function renderTopicSidebar(allowedRanksSet, forceExpandAll = false) {
     for (const cat of topicTaxonomy) {
       for (const sub of (cat.subcategories || [])) {
         if (`topic-sub-${cat.id}-${sub.id}` === activeTopicSubKey) {
-          lockedItems = (sub.items || [])
-            .filter(it => allowedRanksSet.has(it.rank))
+          lockedItems = getSortedTopicItems(sub.items, allowedRanksSet)
             .map(it => familyByRank.get(it.rank))
             .filter(Boolean);
           break;

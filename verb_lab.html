@@ -359,13 +359,18 @@
 <div class="drawer-mask" id="drawerMask" onclick="closeDrawer()"></div>
 <div class="mobile-bar">
   <button class="menu-toggle" onclick="openDrawer()">☰ <span id="mobileCurrentLbl">1. Synonym Sets</span></button>
-  <a class="mobile-back" href="./index.html">← Dictionary</a>
+  <span style="display:inline-flex;gap:5px;align-items:center;white-space:nowrap;"><a href="./index.html" style="padding:2px 7px;background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">← 主词典</a><a href="./index.html?mode=topic" style="padding:2px 7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">🗂️ 主题名词</a></span>
 </div>
 
 <aside class="sidebar">
   <div class="brand">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;">
+      <a href="./index.html" style="padding:5px 4px;border-radius:7px;font-size:12px;font-weight:700;border:1px solid #cbd5e1;background:#ffffff;color:#334155;text-align:center;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;">📚 主词典</a>
+      <a href="./index.html?mode=topic" style="padding:5px 4px;border-radius:7px;font-size:12px;font-weight:700;border:1px solid #cbd5e1;background:#ffffff;color:#334155;text-align:center;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;">🗂️ 主题名词</a>
+      <span style="padding:5px 4px;border-radius:7px;font-size:12px;font-weight:700;border:1px solid #2563eb;background:#2563eb;color:#ffffff;text-align:center;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;">🧭 动词辨析</span>
+    </div>
     <h1>🧭 动词四维语义辨析库</h1>
-    <div class="meta-row" id="metaInfo"><span>Loading...</span><a href="./index.html">← Dictionary</a></div>
+    <div class="meta-row" id="metaInfo"><span>Loading...</span></div>
   </div>
   <div class="mode-list" id="modeList"></div>
   <div class="dom-header">SEMANTIC DOMAINS</div>
@@ -722,8 +727,8 @@ function renderSidebar() {
     counts[g.mode] = (counts[g.mode] || 0) + g.items.length;
   }
   document.getElementById("metaInfo").innerHTML = showZh
-    ? `<span>共 ${validGroups} 个母语框架组</span><a href="./index.html">← 返回主词典</a>`
-    : `<span>${validGroups} Semantic Frames</span><a href="./index.html">← Dictionary</a>`;
+    ? `<span>共 ${validGroups} 个母语框架组</span>`
+    : `<span>${validGroups} Semantic Frames</span>`;
 
   document.querySelector(".dom-header").textContent = showZh ? "按语义领域筛选" : "SEMANTIC DOMAINS";
   document.getElementById("kwInput").placeholder = showZh ? "搜索动词、短语或中文..." : "Filter verbs, phrases, or meaning...";

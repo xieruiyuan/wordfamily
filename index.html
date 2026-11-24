@@ -61,27 +61,32 @@
 <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeMobileDrawer()"></div>
 
 <div class="sidebar" id="sidebar">
-  <div class="status-bar">
-    <span id="loadStatus">正在自动加载词库...</span>
-    <div class="status-actions">
-        <a href="./verb_lab.html" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;font-size:11.5px;font-weight:600;text-decoration:none;white-space:nowrap;">🧭 动词辨析</a>
-        
-      <button class="fallback-btn" onclick="window.__pvLab.open()" title="核心动词短语图谱">🔗 短语</button>
-      <button class="fallback-btn" onclick="window.__dictCtrl.open('setup')" title="单词默写与错题本">✍️ 默写</button>
-      <label class="fallback-btn" title="本地离线浏览时可手动选择 JSON">
-        本地文件
-        <input type="file" id="jsonFile" accept=".json" style="display:none;">
-      </label>
-      <button class="mobile-close-btn" onclick="closeMobileDrawer()">✕ 关闭</button>
+  <div class="status-bar" style="flex-direction:column;align-items:stretch;gap:6px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span id="loadStatus" style="font-size:11.5px;color:#475569;">正在自动加载词库...</span>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <button class="fallback-btn" onclick="window.__pvLab.open()" title="核心动词短语图谱">🔗 短语</button>
+        <button class="fallback-btn" onclick="window.__dictCtrl.open('setup')" title="单词默写与错题本">✍️ 默写</button>
+        <label class="fallback-btn" title="本地离线浏览时可手动选择 JSON">
+          本地
+          <input type="file" id="jsonFile" accept=".json" style="display:none;">
+        </label>
+        <button class="mobile-close-btn" onclick="closeMobileDrawer()">✕ 关闭</button>
+      </div>
+    </div>
+    <div id="unifiedTopNav" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+      <button type="button" data-nav="freq" onclick="setSidebarMode('freq')" style="padding:5px 4px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #2563eb;background:#2563eb;color:#ffffff;text-align:center;white-space:nowrap;">📚 主词典</button>
+      <button type="button" data-nav="topic" onclick="setSidebarMode('topic')" style="padding:5px 4px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #cbd5e1;background:#ffffff;color:#334155;text-align:center;white-space:nowrap;">🗂️ 主题名词</button>
+      <a href="./verb_lab.html" style="padding:5px 4px;border-radius:7px;font-size:12px;font-weight:700;border:1px solid #cbd5e1;background:#ffffff;color:#334155;text-align:center;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;">🧭 动词辨析</a>
     </div>
   </div>
   <div class="search-box" style="position:relative;">
     <input type="text" id="searchInput" placeholder="搜索词头、派生词、释义或词形..." style="padding-right:32px;">
     <button id="clearSearchBtn" type="button" onclick="clearSearchBox()" title="清空搜索 (Esc)" style="display:none;position:absolute;right:20px;top:50%;transform:translateY(-50%);width:20px;height:20px;border:none;border-radius:50%;background:#cbd5e1;color:#ffffff;font-size:12px;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>
-  <div class="view-mode-bar" id="viewModeBar">
+  <div class="view-mode-bar" id="viewModeBar" style="display:none;">
     <button class="view-mode-btn active" data-mode="freq" onclick="setSidebarMode('freq')">📊 按词频</button>
-    <button class="view-mode-btn" data-mode="topic" onclick="setSidebarMode('topic')">🗂️ 按主题</button>
+    <button class="view-mode-btn" data-mode="topic" onclick="setSidebarMode('topic')">🗂️ 主题名词</button>
   </div>
   <div class="pos-filter-bar" id="posFilterBar">
     <button class="pos-chip active" data-pos="ALL" onclick="setPosFilter('ALL')">全部</button>
@@ -91,6 +96,8 @@
     <button class="pos-chip" data-pos="adv." onclick="setPosFilter('adv.')">副词 adv.</button>
     <button class="pos-chip" data-pos="OTHER" onclick="setPosFilter('OTHER')">虚词/其他</button>
     <button class="pos-chip" data-pos="FAV" onclick="setPosFilter('FAV')">⭐ 已收藏 <span id="favCountBadge" style="opacity:0.8;"></span></button>
+    <button class="pos-chip topic-only-chip" id="compoundTopBtn" onclick="toggleCompoundTop()" style="display:none;background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;">⬆️ 复合词置顶</button>
+    <button class="pos-chip topic-only-chip" id="compoundOnlyBtn" onclick="toggleCompoundOnly()" style="display:none;">🧩 仅看复合词</button>
   </div>
     <label class="secondary-pos-toggle" title="开启后，只要词族包含所选词性的非罕见词条（如 wrench 的名词分支），即使主词性不符也会显示">
       <input type="checkbox" id="includeSecondaryPosCheck" onchange="toggleSecondaryPos(this.checked)">
