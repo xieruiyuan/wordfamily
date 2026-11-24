@@ -157,7 +157,51 @@
   .group-desc-zh {
     padding: 7px 13px; background: #fefce8; border-left: 3px solid #eab308;
     border-radius: 0 8px 8px 0; font-size: 12.3px; line-height: 1.5; color: #713f12;
-    margin-top: -8px; margin-bottom: 14px;
+    margin-top: -8px; margin-bottom: 12px;
+  }
+  .nuance-box {
+    margin-bottom: 14px; border-radius: 9px;
+    background: #f8fafc; border: 1px solid #e2e8f0; overflow: hidden;
+  }
+  .nuance-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 7px 12px; cursor: pointer; user-select: none; transition: background 0.12s;
+  }
+  .nuance-bar:hover { background: #f1f5f9; }
+  .nuance-bar-left {
+    display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+  }
+  .nuance-lbl {
+    font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+    color: #1d4ed8; background: #dbeafe; padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+  }
+  .nuance-preview {
+    font-size: 12px; font-weight: 600; color: #475569;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .nuance-toggle-txt {
+    font-size: 11.5px; font-weight: 700; color: #2563eb; flex-shrink: 0;
+  }
+  .nuance-list {
+    display: none; flex-direction: column;
+    border-top: 1px solid #e2e8f0; background: #ffffff;
+  }
+  .nuance-box.open .nuance-list { display: flex; }
+  .nuance-row {
+    display: grid; grid-template-columns: 120px 1fr auto; align-items: baseline; gap: 12px;
+    padding: 7px 14px; border-bottom: 1px dashed #f1f5f9; font-size: 12.2px; line-height: 1.45;
+  }
+  .nuance-row:last-child { border-bottom: none; }
+  .nuance-row:hover { background: #f8fafc; }
+  .nuance-verb { font-weight: 800; color: #0f172a; font-size: 12.8px; }
+  .nuance-diff { color: #334155; }
+  .nuance-colloc {
+    font-size: 11.3px; font-weight: 600; color: #1d4ed8; background: #eff6ff;
+    padding: 1.5px 8px; border-radius: 99px; white-space: nowrap;
+  }
+  @media (max-width: 680px) {
+    .nuance-row { grid-template-columns: 1fr; gap: 3px; padding: 8px 12px; }
+    .nuance-colloc { justify-self: start; }
   }
 
   /* 单词卡片网格 */
@@ -177,6 +221,15 @@
 
   .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
   .v-head { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+  .spk-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; border: 1px solid transparent;
+    background: transparent; color: #64748b; cursor: pointer; padding: 0;
+    transition: all 0.15s; flex-shrink: 0; vertical-align: middle;
+  }
+  .spk-btn:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+  .spk-btn.speaking { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; transform: scale(1.06); }
+  .spk-btn svg { width: 13px; height: 13px; stroke-width: 2.2; }
   .v-lemma { font-size: 15.5px; font-weight: 800; color: #0f172a; }
 
   .tag-trans {
@@ -452,6 +505,65 @@ function closeDrawer() {
   document.getElementById("drawerMask").classList.remove("open");
 }
 
+function toggleNuanceBox(bar, ev) {
+  if (ev) ev.stopPropagation();
+  const box = bar.closest(".nuance-box");
+  if (!box) return;
+  const isOpen = box.classList.toggle("open");
+  const lbl = bar.querySelector(".nuance-toggle-txt");
+  if (lbl) {
+    lbl.textContent = isOpen
+      ? (showZh ? "收起 ▴" : "Hide ▴")
+      : (showZh ? "展开辨析 ▾" : "Compare ▾");
+  }
+}
+
+function renderNuanceStrip(g) {
+  const raw = showZh ? (g.nuance_zh || g.nuance_en) : g.nuance_en;
+  if (!raw) return "";
+  const items = raw.split(/\s*·\s*/).map(s => s.trim()).filter(Boolean);
+  if (!items.length) return "";
+
+  const verbsPreview = [];
+  const rowsHtml = items.map(part => {
+    const idx = part.indexOf(":");
+    if (idx > 0 && idx < 30) {
+      const v = part.slice(0, idx).trim();
+      verbsPreview.push(v);
+      let rest = part.slice(idx + 1).trim();
+      let collocHtml = "";
+      const m = rest.match(/\(([^)]+)\)\s*$/);
+      if (m) {
+        rest = rest.slice(0, m.index).trim();
+        collocHtml = `<span class="nuance-colloc">${m[1]}</span>`;
+      }
+      return `
+        <div class="nuance-row">
+          <span class="nuance-verb">${v}</span>
+          <span class="nuance-diff">${rest}</span>
+          ${collocHtml}
+        </div>`;
+    }
+    return `<div class="nuance-row"><span class="nuance-diff" style="grid-column:1/-1;">${part}</span></div>`;
+  }).join("");
+
+  const previewTxt = verbsPreview.join(" · ");
+  const titleTxt = showZh ? "词间微差 & 搭配" : "Nuance & Collocations";
+  const btnTxt = showZh ? "展开辨析 ▾" : "Compare ▾";
+
+  return `
+    <div class="nuance-box">
+      <div class="nuance-bar" onclick="toggleNuanceBox(this, event)">
+        <div class="nuance-bar-left">
+          <span class="nuance-lbl">${titleTxt}</span>
+          <span class="nuance-preview">${previewTxt}</span>
+        </div>
+        <span class="nuance-toggle-txt">${btnTxt}</span>
+      </div>
+      <div class="nuance-list">${rowsHtml}</div>
+    </div>`;
+}
+
 function formatGroupTitle(raw) {
   if (!raw) return "";
   if (showZh) return raw;
@@ -466,6 +578,33 @@ function formatDefEn(raw) {
   const extra = parts.length - 2;
   return shown.map(p => `<div class="sense-line">${p.trim()}</div>`).join("") +
     (extra > 0 ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;">+${extra} more sense${extra > 1 ? 's' : ''}</div>` : "");
+}
+
+function speakWord(text, btn, ev) {
+  if (ev) ev.stopPropagation();
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  document.querySelectorAll(".spk-btn.speaking").forEach(el => el.classList.remove("speaking"));
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.94;
+
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => /en[-_]US/i.test(v.lang) && /(Samantha|Ava|Allison|Alex|Google US English|Natural)/i.test(v.name))
+                 || voices.find(v => /en[-_]US/i.test(v.lang))
+                 || voices.find(v => /^en/i.test(v.lang));
+  if (preferred) utter.voice = preferred;
+
+  if (btn) btn.classList.add("speaking");
+  utter.onend = utter.onerror = () => {
+    if (btn) btn.classList.remove("speaking");
+  };
+  window.speechSynthesis.speak(utter);
+}
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
 
 function formatExampleEn(ex, lemma, prep = "") {
@@ -764,7 +903,7 @@ function renderGroups() {
           <div>
             <div class="v-top">
               <div class="v-head">
-                <span class="v-lemma">${it.lemma}</span>
+                <span class="v-lemma">${it.lemma}</span><button class="spk-btn" title="朗读发音" onclick="speakWord('${it.lemma.replace(/'/g, "\\'")}', this, event)" aria-label="Pronounce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
                 <span class="tag-trans ${badgeCls}" title="${vMeta.enNote}">${badgeText}</span>
                 ${isPv ? '<span class="tag-pv">PV</span>' : ''}
               </div>
@@ -777,22 +916,22 @@ function renderGroups() {
             <div class="v-en">${formatDefEn(it.def_en)}</div>
             ${it.ex_en ? (() => {
               const isErgPair = valType === "ergative" && it.ex2_en;
-              const dir1 = it.ex_dir === "autonomous" ? "auto" : "caus";
-              const dir2 = dir1 === "caus" ? "auto" : "caus";
-              const tag1 = isErgPair
-                ? `<span class="ex-dir-tag ${dir1 === 'caus' ? 'ex-dir-caus' : 'ex-dir-auto'}">${dir1 === 'caus' ? (showZh ? '致使 Sb V sth' : 'Causative') : (showZh ? '自主 Sth V' : 'Autonomous')}</span>`
-                : "";
-              const tag2 = isErgPair
-                ? `<span class="ex-dir-tag ${dir2 === 'caus' ? 'ex-dir-caus' : 'ex-dir-auto'}">${dir2 === 'caus' ? (showZh ? '致使 Sb V sth' : 'Causative') : (showZh ? '自主 Sth V' : 'Autonomous')}</span>`
-                : "";
+              // 统一固定顺序：第一句永远展示 Autonomous (Sth V)，第二句永远展示 Causative (Sb/Sth V sth)，与公式徽章 Sth V ↔ Sb/Sth V sth 严格对齐
+              const firstIsAuto = !isErgPair || it.ex_dir === "autonomous";
+              const topEn = firstIsAuto ? it.ex_en : it.ex2_en;
+              const topZh = firstIsAuto ? it.ex_zh : it.ex2_zh;
+              const botEn = firstIsAuto ? it.ex2_en : it.ex_en;
+              const botZh = firstIsAuto ? it.ex2_zh : it.ex_zh;
+              const tagAuto = `<span class="ex-dir-tag ex-dir-auto">${showZh ? '自主 Sth V' : 'Autonomous'}</span>`;
+              const tagCaus = `<span class="ex-dir-tag ex-dir-caus">${showZh ? '致使 Sb V sth' : 'Causative'}</span>`;
               return `
                 <div class="v-ex-box" style="display:${showAllEx ? 'block' : 'none'};">
-                  <div class="v-ex-en">${tag1}“${formatExampleEn(it.ex_en, it.lemma, it.prep)}”</div>
-                  ${(showZh && it.ex_zh) ? `<div class="v-ex-zh">${it.ex_zh}</div>` : ""}
+                  <div class="v-ex-en">${isErgPair ? tagAuto : ""}“${formatExampleEn(topEn, it.lemma, it.prep)}”</div>
+                  ${(showZh && topZh) ? `<div class="v-ex-zh">${topZh}</div>` : ""}
                   ${isErgPair ? `
                     <div class="v-ex-pair-div"></div>
-                    <div class="v-ex-en">${tag2}“${formatExampleEn(it.ex2_en, it.lemma, it.prep)}”</div>
-                    ${(showZh && it.ex2_zh) ? `<div class="v-ex-zh">${it.ex2_zh}</div>` : ""}
+                    <div class="v-ex-en">${tagCaus}“${formatExampleEn(botEn, it.lemma, it.prep)}”</div>
+                    ${(showZh && botZh) ? `<div class="v-ex-zh">${botZh}</div>` : ""}
                   ` : ""}
                 </div>`;
             })() : ""}
@@ -871,6 +1010,7 @@ function renderGroups() {
         <div class="group-body">
           ${g.desc_en ? `<div class="group-desc-en">${g.desc_en}</div>` : ""}
           ${(showZh && g.desc_zh) ? `<div class="group-desc-zh">${g.desc_zh}</div>` : ""}
+          ${renderNuanceStrip(g)}
           ${bodyGridHtml}
         </div>
       </section>
