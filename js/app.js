@@ -26,7 +26,7 @@ function formatDefEn(raw) {
   return decorateBody(esc);
 }
 
-const APP_VERSION = "2026.11.19.3";
+const APP_VERSION = "2026.11.19.3_v2";
 const DATA_URL = `./word_families_final.json?v=${APP_VERSION}`;
 const VP_URL = `./verb_phrases.json?v=${APP_VERSION}`;
 const TOPIC_URL = `./topic_taxonomy.json?v=${APP_VERSION}`;
