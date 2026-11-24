@@ -50,6 +50,11 @@
 </script>
 <title>英语词族与派生形态树词典</title>
 <link rel="stylesheet" href="./css/app.css?v=2026.11.19.3">
+<style>
+  .status-bar { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; }
+  .status-actions { display: flex !important; flex-wrap: nowrap !important; gap: 4px !important; justify-content: space-between !important; align-items: center !important; }
+  .status-actions button, .status-actions a { white-space: nowrap !important; padding: 3px 6px !important; font-size: 11.5px !important; flex-shrink: 0 !important; }
+</style>
 </head>
 <body>
 
@@ -59,6 +64,8 @@
   <div class="status-bar">
     <span id="loadStatus">正在自动加载词库...</span>
     <div class="status-actions">
+        <a href="./verb_lab.html" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;font-size:11.5px;font-weight:600;text-decoration:none;white-space:nowrap;">🧭 动词辨析</a>
+        
       <button class="fallback-btn" onclick="window.__pvLab.open()" title="核心动词短语图谱">🔗 短语</button>
       <button class="fallback-btn" onclick="window.__dictCtrl.open('setup')" title="单词默写与错题本">✍️ 默写</button>
       <label class="fallback-btn" title="本地离线浏览时可手动选择 JSON">

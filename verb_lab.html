@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动词四维语义辨析库 (Native Frames & Phrasal Verbs)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #0f172a; display: flex; min-height: 100vh; }
+  aside { width: 280px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; }
+  .side-head { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; }
+  .side-head h2 { margin: 0 0 4px; font-size: 16px; }
+  .side-head p { margin: 0; font-size: 12px; color: #64748b; }
+  .mode-nav { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 4px; }
+  .mode-btn { padding: 9px 11px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; border: 1px solid transparent; background: transparent; text-align: left; }
+  .mode-btn:hover { background: #f1f5f9; }
+  .mode-btn.active { background: #0f172a; color: #fff; font-weight: 600; }
+  .mode-btn .cnt { font-size: 11px; background: #e2e8f0; color: #475569; padding: 1px 7px; border-radius: 999px; }
+  .mode-btn.active .cnt { background: #334155; color: #f8fafc; }
+  .dom-filter-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .dom-sub-title { font-size: 11px; font-weight: 700; color: #94a3b8; padding: 4px 10px; text-transform: uppercase; }
+  .dom-item { padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; color: #334155; }
+  .dom-item:hover { background: #f1f5f9; }
+  .dom-item.active { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+  main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  .mode-desc { font-size: 13px; color: #334155; font-weight: 500; }
+  .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .filters select, .filters input { padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
+  .filters input { width: 190px; }
+  .content { padding: 16px 20px; }
+  .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px 17px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .group-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .group-title-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group-title { font-weight: 700; font-size: 15.5px; color: #0f172a; }
+  .dom-tag { font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 7px; border-radius: 5px; }
+  .summary-box { background: #f8fafc; border-left: 3px solid #2563eb; padding: 8px 12px; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+  .summary-en { font-size: 12.8px; color: #1e293b; line-height: 1.5; font-weight: 500; }
+  .summary-zh { font-size: 12px; color: #0369a1; margin-top: 3px; }
+  .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 10px; }
+  .v-chip { border: 1px solid #e2e8f0; border-radius: 9px; padding: 10px 12px; background: #fff; display: flex; flex-direction: column; gap: 5px; }
+  .v-chip.is-pv { border-color: #ddd6fe; background: #faf5ff; }
+  .v-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .v-word { font-weight: 700; font-size: 15px; color: #0f172a; cursor: pointer; }
+  .v-word:hover { color: #2563eb; text-decoration: underline; }
+  .tr-badge { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+  .tr-T { background: #dbeafe; color: #1e40af; }
+  .tr-I { background: #fce7f3; color: #9d174d; }
+  .tr-I_T { background: #e0e7ff; color: #3730a3; }
+  .pv-badge { font-size: 10px; background: #7c3aed; color: #fff; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+  .lv { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
+  .lv-1 { background: #dcfce7; color: #166534; }
+  .lv-2 { background: #e0f2fe; color: #075985; }
+  .lv-3 { background: #fef9c3; color: #854d0e; }
+  .lv-4 { background: #ffedd5; color: #9a3412; }
+  .lv-5 { background: #fee2e2; color: #991b1b; }
+  .sec-badge { font-size: 10px; background: #f1f5f9; color: #475569; padding: 1px 5px; border-radius: 4px; }
+  .v-zh { font-size: 13px; color: #0f172a; font-weight: 500; }
+  .v-en { font-size: 12px; color: #475569; line-height: 1.45; }
+  .v-foot { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: auto; padding-top: 3px; }
+  .v-foot a { color: #2563eb; text-decoration: none; }
+  @media (max-width: 760px) {
+    body { flex-direction: column; }
+    aside { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid #e2e8f0; }
+    .dom-filter-list { display: none; }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <div class="side-head">
+    <h2>🧭 动词四维语义辨析库</h2>
+    <p id="metaInfo">加载中... · <a href="./index.html" style="color:#2563eb;">返回主词典</a></p>
+  </div>
+  <div class="mode-nav" id="modeNav"></div>
+  <div class="dom-filter-list" id="domList"></div>
+</aside>
+<main>
+  <div class="topbar">
+    <div class="mode-desc" id="modeDesc"></div>
+    <div class="filters">
+      <select id="trFilter">
+        <option value="ALL">全部及物性 ([T] / [I] / [I, T])</option>
+        <option value="T">仅看 [T] 及物</option>
+        <option value="I">仅看 [I] 不及物</option>
+        <option value="I_T">仅看 [I, T] 两用</option>
+      </select>
+      <select id="posScope">
+        <option value="ALL">全部词条 (单词 + 短语动词)</option>
+        <option value="PV_ONLY">仅看短语动词 (Phrasal Verbs)</option>
+        <option value="PRIMARY">仅主词性 v.</option>
+        <option value="SECONDARY">仅兼项非罕见 v.</option>
+      </select>
+      <input id="kwInput" placeholder="搜索动词、短语或中文..." />
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</main>
+<script>
+const MODES = [
+  { id: "synonym", icon: "🔁", name: "1. 同义替换组", desc: "母语级同义语义框架（如 Attest/Vouch vs Substantiate/Corroborate），附英文核心辨析" },
+  { id: "intensity", icon: "📈", name: "2. 情感/强弱梯度组", desc: "相近动作按情感色彩与力度从轻到重排列（Lv.1 轻/缓 ➔ Lv.5 重/烈）" },
+  { id: "manner", icon: "🎭", name: "3. 动作神态/方式细分组", desc: "同一基础动作的不同神态与方式区分（如 smile/grin/laugh，glance/gaze/glare）" },
+  { id: "scenario", icon: "🎬", name: "4. 主题场景聚合组", desc: "同一生活、学术或专业场景下成套出现的动作与短语动词归纳" }
+];
+
+let DATA = null, activeMode = "synonym", activeDom = "ALL";
+
+function speak(w) {
+  new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(w)}&type=2`).play().catch(() => {});
+}
+
+function renderSidebar() {
+  const counts = DATA.meta.mode_counts || {};
+  document.getElementById("modeNav").innerHTML = MODES.map(m => `
+    <button class="mode-btn ${m.id === activeMode ? "active" : ""}" onclick="setMode('${m.id}')">
+      <span>${m.icon} ${m.name}</span>
+      <span class="cnt">${counts[m.id] || 0}</span>
+    </button>
+  `).join("");
+
+  const domCounts = {};
+  for (const g of DATA.groups) {
+    if (g.mode !== activeMode) continue;
+    domCounts[g.domain] = (domCounts[g.domain] || 0) + g.count;
+  }
+  const domNames = {};
+  DATA.groups.forEach(g => domNames[g.domain] = g.domain_name);
+
+  let domHtml = `<div class="dom-sub-title">按语义领域筛选</div>
+    <div class="dom-item ${activeDom === "ALL" ? "active" : ""}" onclick="setDom('ALL')"><span>全部领域</span><span>${counts[activeMode] || 0}</span></div>`;
+  for (const [did, cnt] of Object.entries(domCounts).sort((a, b) => b[1] - a[1])) {
+    domHtml += `<div class="dom-item ${activeDom === did ? "active" : ""}" onclick="setDom('${did}')"><span>${domNames[did]}</span><span>${cnt}</span></div>`;
+  }
+  document.getElementById("domList").innerHTML = domHtml;
+}
+
+function setMode(m) { activeMode = m; activeDom = "ALL"; renderSidebar(); renderMain(); }
+function setDom(d) { activeDom = d; renderSidebar(); renderMain(); }
+
+function renderMain() {
+  const modeObj = MODES.find(m => m.id === activeMode);
+  document.getElementById("modeDesc").textContent = `${modeObj.icon} ${modeObj.desc}`;
+
+  const trF = document.getElementById("trFilter").value;
+  const scope = document.getElementById("posScope").value;
+  const kw = document.getElementById("kwInput").value.trim().toLowerCase();
+
+  let html = "";
+  for (const g of DATA.groups) {
+    if (g.mode !== activeMode) continue;
+    if (activeDom !== "ALL" && g.domain !== activeDom) continue;
+
+    const groupMatch = kw && (g.name.toLowerCase().includes(kw) || (g.summary_en || "").toLowerCase().includes(kw) || (g.summary_zh || "").toLowerCase().includes(kw));
+    const items = g.items.filter(it => {
+      if (trF !== "ALL" && it.trans !== trF) return false;
+      if (scope === "PV_ONLY" && !it.is_pv) return false;
+      if (scope === "PRIMARY" && (!it.is_primary_v || it.is_pv)) return false;
+      if (scope === "SECONDARY" && (it.is_primary_v || it.is_pv)) return false;
+      if (kw && !groupMatch && !it.lemma.toLowerCase().includes(kw) && !(it.def_zh || "").includes(kw) && !(it.def_en || "").toLowerCase().includes(kw)) return false;
+      return true;
+    });
+    if (!items.length) continue;
+
+    const chips = items.map(it => {
+      const trLabel = it.trans === "I_T" ? "[I, T]" : `[${it.trans}]`;
+      const showLv = (g.mode === "intensity" || g.mode === "manner");
+      return `
+        <div class="v-chip ${it.is_pv ? "is-pv" : ""}">
+          <div class="v-top">
+            <span class="v-word" title="点击发音" onclick="speak('${it.lemma}')">${it.lemma}</span>
+            <span class="tr-badge tr-${it.trans}">${trLabel}</span>
+            ${it.is_pv ? `<span class="pv-badge">短语动词</span>` : ""}
+            ${showLv ? `<span class="lv lv-${it.intensity}">Lv.${it.intensity}</span>` : ""}
+            ${(!it.is_primary_v && !it.is_pv) ? `<span class="sec-badge">兼项</span>` : ""}
+          </div>
+          <div class="v-zh">${it.def_zh || ""}</div>
+          <div class="v-en">${it.def_en || ""}</div>
+          <div class="v-foot">
+            <span>${it.zipf ? "Zipf " + it.zipf : (it.is_pv ? "Phrasal Verb" : "补充核心词")}</span>
+            ${it.rank ? `<a href="./index.html#${encodeURIComponent(it.headword)}" target="_blank">#${it.rank} ↗</a>` : `<span></span>`}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const sumEn = g.summary_en || "";
+    const sumZh = g.summary_zh || g.tip || "";
+
+    html += `
+      <div class="group-card">
+        <div class="group-head">
+          <div class="group-title-wrap">
+            <span class="group-title">${g.name}（${items.length} 词）</span>
+            <span class="dom-tag">${g.domain_name}</span>
+          </div>
+        </div>
+        ${(sumEn || sumZh) ? `
+          <div class="summary-box">
+            ${sumEn ? `<div class="summary-en">${sumEn}</div>` : ""}
+            ${sumZh ? `<div class="summary-zh">💡 ${sumZh}</div>` : ""}
+          </div>
+        ` : ""}
+        <div class="word-grid">${chips}</div>
+      </div>
+    `;
+  }
+  document.getElementById("content").innerHTML = html || '<div style="color:#94a3b8;padding:30px;text-align:center;">当前筛选条件下无匹配词组</div>';
+}
+
+document.getElementById("trFilter").onchange = renderMain;
+document.getElementById("posScope").onchange = renderMain;
+document.getElementById("kwInput").oninput = renderMain;
+
+fetch("./verb_taxonomy_v2.json?t=" + Date.now())
+  .then(r => r.json())
+  .then(d => {
+    DATA = d;
+    document.getElementById("metaInfo").innerHTML = `共 ${d.meta.total_groups} 个母语框架组 · <a href="./index.html" style="color:#2563eb;">返回主词典</a>`;
+    renderSidebar();
+    renderMain();
+  });
+</script>
+</body>
+</html>
