@@ -518,6 +518,21 @@ function toggleNuanceBox(bar, ev) {
   }
 }
 
+function sortItemsUniformly(items) {
+  const tierWeight = { CORE: 1, COMMON: 2, UNCOMMON: 3, RARE: 4 };
+  return [...items].sort((a, b) => {
+    const wa = tierWeight[(a.freq_tier || "").toUpperCase()] || 3;
+    const wb = tierWeight[(b.freq_tier || "").toUpperCase()] || 3;
+    if (wa !== wb) return wa - wb;
+
+    const za = typeof a.zipf === "number" ? a.zipf : (a.is_pv ? 4.1 : 3.2);
+    const zb = typeof b.zipf === "number" ? b.zipf : (b.is_pv ? 4.1 : 3.2);
+    if (Math.abs(zb - za) > 0.05) return zb - za;
+
+    return (a.lemma || "").localeCompare(b.lemma || "", "en", { sensitivity: "base" });
+  });
+}
+
 function renderNuanceStrip(g) {
   const raw = showZh ? (g.nuance_zh || g.nuance_en) : g.nuance_en;
   if (!raw) return "";
@@ -967,8 +982,9 @@ function renderGroups() {
         const secId = `${g.name}::${vt}`;
         const isExpanded = expandedSecs.has(secId) || kw.length > 0;
         const CAP = 6;
-        const shownArr = isExpanded ? arr : arr.slice(0, CAP);
-        const hiddenCnt = arr.length - shownArr.length;
+        const _sortedItems = sortItemsUniformly(arr);
+      const shownArr = isExpanded ? _sortedItems : _sortedItems.slice(0, CAP);
+        const hiddenCnt = _sortedItems.length - shownArr.length;
         const moreBtn = hiddenCnt > 0
           ? `<button class="sec-more-btn" onclick="expandSyntaxSec(${JSON.stringify(secId).replace(/"/g, '&quot;')})">${showZh ? `+ 展开其余 ${hiddenCnt} 个同句法动词` : `+ Show ${hiddenCnt} more verbs in this syntax pattern`}</button>`
           : "";
