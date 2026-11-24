@@ -1329,10 +1329,11 @@
           "def_zh": "眯起眼睛看；斜视",
           "def_en": "1. to look at something with eyes partly closed, such as in bright light. 2. to have an eye that turns inward or outward.",
           "register": "neutral",
-          "ex_en": "The bright midday glare forced everyone on the beach to squint uncomfortably.",
-          "ex_zh": "正午耀眼的强光迫使海滩上的每个人都难受地眯起了眼睛。",
-          "valency": "intrans_auto",
-          "prep": ""
+          "ex_en": "He had to squint at the tiny print on the medicine bottle without his glasses.",
+          "ex_zh": "没戴眼镜，他不得不眯起眼睛看药瓶上的小字。",
+          "valency": "prepositional",
+          "prep": "at",
+          "prep_opt": true
         },
         {
           "rank": 12901,
@@ -312164,10 +312165,11 @@
           "def_zh": "眯起眼睛看",
           "def_en": "To look at something with eyes partly closed, typically in bright light or when trying to see clearly",
           "register": "neutral",
-          "ex_en": "He had to squint against the glaring desert sun to read the road sign.",
-          "ex_zh": "在刺目的沙漠阳光下，他不得不眯起眼睛去辨认路标。",
-          "valency": "intrans_auto",
-          "prep": ""
+          "ex_en": "He had to squint at the tiny print on the medicine bottle without his glasses.",
+          "ex_zh": "没戴眼镜，他不得不眯起眼睛看药瓶上的小字。",
+          "valency": "prepositional",
+          "prep": "at",
+          "prep_opt": true
         },
         {
           "rank": null,
